@@ -10,12 +10,15 @@ import websockets
 
 async def game_loop(game_state):
     while True:
-        # update game state
+        ts_prev = game_state["ts"]
+        ts_curr = datetime.datetime.utcnow().timestamp()
+        delta_t = ts_curr - ts_prev
         for u in game_state["units"]:
-            u["x"] = (u["x"] + math.cos(u["dir"]) * u["speed"]) % 10
-            u["y"] = (u["y"] + math.sin(u["dir"]) * u["speed"]) % 10
+            u["x"] = (u["x"] + math.cos(u["dir"]) * u["speed"] * delta_t) % 10
+            u["y"] = (u["y"] + math.sin(u["dir"]) * u["speed"] * delta_t) % 10
             u["dir"] = (u["dir"] + random.random() * 0.2 - 0.1) % (2.0 * math.pi)
-        game_state["ts"] = datetime.datetime.utcnow().isoformat()
+        game_state["ts"] = datetime.datetime.utcnow().timestamp()
+        game_state["tick_no"] += 1
         await asyncio.sleep(0.025)
 
 
@@ -36,13 +39,13 @@ async def run_all():
 
 
 def init_game_state():
-    gs = {"units": [], "ts": None}
+    gs = {"units": [], "ts": datetime.datetime.utcnow().timestamp(), "tick_no": 0}
     n_units = 10
     for _ in range(n_units):
         u = {
             "x": random.random() * 10,
             "y": random.random() * 10,
-            "speed": 0.02,
+            "speed": 1.0,
             "dir": random.random() * math.pi,
         }
         gs["units"].append(u)

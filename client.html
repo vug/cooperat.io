@@ -28,7 +28,7 @@
 
             var debugList = document.getElementById('debug-list');
             var item = document.createElement('li');
-            content = document.createTextNode(msg["ts"]);
+            content = document.createTextNode("tick no: " + msg["tick_no"] + ", ts: " + msg["ts"]);
             item.appendChild(content);
             debugList.prepend(item);
             if (debugList.children.length > 10) {  // Keep 10 most recent items
