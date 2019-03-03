@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>WebSocket Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <script>
+        var ws = new WebSocket('ws://127.0.0.1:8765');
+        var messages = document.createElement('ul');
+        document.body.appendChild(messages);
+
+        ws.onmessage = function(event) {
+            var messages = document.getElementsByTagName('ul')[0];
+            var message = document.createElement('li');
+            content = document.createTextNode(event.data);
+            message.appendChild(content);
+            messages.appendChild(message);
+        };
+    </script>
+</body>
+</html>
