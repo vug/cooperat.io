@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>WebSocket Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <canvas id="canvas" width="500" height="500">Game Arena</canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        var ws = new WebSocket('ws://127.0.0.1:8765');
+        var messages = document.createElement('ul');
+        document.body.appendChild(messages);
+
+        ws.onmessage = function(event) {
+            ctx.fillStyle = 'grey';
+            ctx.fillRect(0, 0, 500, 500);
+
+            var msg = JSON.parse(event.data);
+            ctx.fillStyle = 'green';
+            for (var u of msg['units']) {
+                x = u["x"] * 50;
+                y = u["y"] * 50;
+                ctx.fillRect(x - 5, y - 5, 10, 10);
+            }
+
+
+
+            // TODO: replaces messages with a TextArea
+            var messages = document.getElementsByTagName('ul')[0];
+            var message = document.createElement('li');
+
+            content = document.createTextNode(msg["ts"]);
+            message.appendChild(content);
+            messages.prepend(message);
+            if (messages.children.length > 10) {
+                messages.removeChild(messages.lastChild);
+            }
+        };
+    </script>
+</body>
+</html>
