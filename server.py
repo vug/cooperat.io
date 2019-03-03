@@ -16,7 +16,7 @@ async def game_loop(game_state):
         for u in game_state["units"]:
             u["x"] = (u["x"] + math.cos(u["dir"]) * u["speed"] * delta_t) % 10
             u["y"] = (u["y"] + math.sin(u["dir"]) * u["speed"] * delta_t) % 10
-            u["dir"] = (u["dir"] + random.random() * 0.2 - 0.1) % (2.0 * math.pi)
+            u["dir"] = (u["dir"] + random.random() * 0.4 - 0.2) % (2.0 * math.pi)
         game_state["ts"] = datetime.datetime.utcnow().timestamp()
         game_state["tick_no"] += 1
         await asyncio.sleep(0.025)
