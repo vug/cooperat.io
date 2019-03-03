@@ -1,7 +1,8 @@
 import asyncio
 import datetime
-import json
 import functools
+import json
+import math
 import random
 
 import websockets
@@ -11,8 +12,9 @@ async def game_loop(game_state):
     while True:
         # update game state
         for u in game_state["units"]:
-            u["x"] = (u["x"] + 0.05 * random.random() - 0.025) % 10
-            u["y"] = (u["y"] + 0.05 * random.random() - 0.025) % 10
+            u["x"] = (u["x"] + math.cos(u["dir"]) * u["speed"]) % 10
+            u["y"] = (u["y"] + math.sin(u["dir"]) * u["speed"]) % 10
+            u["dir"] = (u["dir"] + random.random() * 0.2 - 0.1) % (2.0 * math.pi)
         game_state["ts"] = datetime.datetime.utcnow().isoformat()
         await asyncio.sleep(0.025)
 
@@ -37,7 +39,12 @@ def init_game_state():
     gs = {"units": [], "ts": None}
     n_units = 10
     for _ in range(n_units):
-        u = {"x": random.random() * 10, "y": random.random() * 10}
+        u = {
+            "x": random.random() * 10,
+            "y": random.random() * 10,
+            "speed": 0.02,
+            "dir": random.random() * math.pi,
+        }
         gs["units"].append(u)
     return gs
 
