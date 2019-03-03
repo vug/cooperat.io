@@ -7,13 +7,12 @@
 </head>
 <body>
     <canvas id="canvas" width="500" height="500">Game Arena</canvas>
+    <ul id="debug-list"></ul>
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
         var ws = new WebSocket('ws://127.0.0.1:8765');
-        var messages = document.createElement('ul');
-        document.body.appendChild(messages);
 
         ws.onmessage = function(event) {
             ctx.fillStyle = 'grey';
@@ -27,17 +26,13 @@
                 ctx.fillRect(x - 5, y - 5, 10, 10);
             }
 
-
-
-            // TODO: replaces messages with a TextArea
-            var messages = document.getElementsByTagName('ul')[0];
-            var message = document.createElement('li');
-
+            var debugList = document.getElementById('debug-list');
+            var item = document.createElement('li');
             content = document.createTextNode(msg["ts"]);
-            message.appendChild(content);
-            messages.prepend(message);
-            if (messages.children.length > 10) {
-                messages.removeChild(messages.lastChild);
+            item.appendChild(content);
+            debugList.prepend(item);
+            if (debugList.children.length > 10) {  // Keep 10 most recent items
+                debugList.removeChild(debugList.lastChild);
             }
         };
     </script>
