@@ -25,20 +25,24 @@ async def serve(ws, path, game_state):
 
 
 async def run_all():
+    game_state = init_game_state()
+    game_loop_routine = game_loop(game_state)
+    ws_server_routine = websockets.serve(
+        functools.partial(serve, game_state=game_state), "localhost", 8765
+    )
+    await asyncio.gather(game_loop_routine, ws_server_routine)
+
+
+def init_game_state():
     gs = {"units": [], "ts": None}
     n_units = 10
     for _ in range(n_units):
         u = {"x": random.random() * 10, "y": random.random() * 10}
         gs["units"].append(u)
-
-    start_server = websockets.serve(
-        functools.partial(serve, game_state=gs), "localhost", 8765
-    )
-    await asyncio.gather(game_loop(gs), start_server)
+    return gs
 
 
 if __name__ == "__main__":
-
     event_loop = asyncio.get_event_loop()
     event_loop.run_until_complete(run_all())
     event_loop.run_forever()
