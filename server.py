@@ -11,7 +11,7 @@ import websockets
 async def game_loop(game_state):
     """Update game state periodically.
 
-    This happens independent of client connections, hence no websocket references are 
+    This happens independent of client connections, hence no websocket references are
     needed.
     """
     while True:
@@ -66,6 +66,4 @@ def init_game_state():
 
 
 if __name__ == "__main__":
-    event_loop = asyncio.get_event_loop()
-    event_loop.run_until_complete(run_server())
-    event_loop.run_forever()
+    asyncio.run(run_server())
