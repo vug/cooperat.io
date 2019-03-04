@@ -35,25 +35,30 @@ def update_positions(game_state, delta_t):
 
 
 async def handler(ws, path, game_state):
+    """A producer_handler, for now.
+
+    TODO: Rename it to connection_handler and separate producer_handler and
+    connection_handler into different co-routines. "register" them here.
+    """
     print(f"client connected: {ws.remote_address}")
     while True:
         await ws.send(json.dumps(game_state))
         await asyncio.sleep(0.025)
 
 
-async def run_server():
+async def main():
     game_state = init_game_state()
     game_loop_routine = game_loop(game_state)
     # Add an argument to handler
     bound_handler = functools.partial(handler, game_state=game_state)
-    ws_server_routine = websockets.serve(bound_handler, "localhost", 8765)
-    await asyncio.gather(game_loop_routine, ws_server_routine)
+    ws_server = websockets.serve(bound_handler, "localhost", 8765)
+    await asyncio.gather(game_loop_routine, ws_server)
 
 
 def init_game_state():
     gs = {"units": [], "ts": datetime.datetime.utcnow().timestamp(), "tick_no": 0}
-    n_units = 10
-    for _ in range(n_units):
+    n_ghosts = 10
+    for _ in range(n_ghosts):
         u = {
             "type": "ghost",
             "x": random.random() * 10,
@@ -66,4 +71,4 @@ def init_game_state():
 
 
 if __name__ == "__main__":
-    asyncio.run(run_server())
+    asyncio.run(main())
