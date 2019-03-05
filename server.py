@@ -48,10 +48,12 @@ async def producer_handler(ws, path, game_state):
         while True:
             game_loop(game_state)
             message = {"ts": game_state.ts, "tick_no": game_state.tick_no}
-            message["units"] = [
-                {k: u[k] for k in ["type", "x", "y", "dir"]}
-                for u in game_state.units.values()
-            ]
+            message["units"] = []
+            for uid, u in game_state.units.items():
+                d = {k: u[k] for k in ["type", "x", "y", "dir"]}
+                if uid == connectedSockets[ws]:
+                    d["type"] = "me"
+                message["units"].append(d)
 
             await ws.send(json.dumps(message))
             await asyncio.sleep(0.025)

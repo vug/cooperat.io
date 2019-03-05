@@ -23,11 +23,11 @@
                 if (u['type'] == 'ghost') {
                     ctx.fillStyle = 'pink';
                 }
-                else if (u['type'] == 'player') {
+                else if (u['type'] == 'me') {
                     ctx.fillStyle = 'blue';
                 }
-                else {
-                    ctx.fillStyle = 'red';
+                else if (u['type'] == 'player') {
+                    ctx.fillStyle = 'orange';
                 }
                 x = u["x"] * 50;
                 y = u["y"] * 50;
