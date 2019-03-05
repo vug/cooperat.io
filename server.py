@@ -34,13 +34,22 @@ def update_positions(game_state, delta_t):
 
 
 async def producer_handler(ws, path, game_state):
-    while True:
-        game_loop(game_state)
-        try:
-            await ws.send(json.dumps(game_state))
-        except websockets.ConnectionClosed:
-            logging.info(f"User {ws.remote_address} has left")            
-        await asyncio.sleep(0.025)
+    try:
+        while True:
+            game_loop(game_state)
+            message = {key: game_state[key] for key in ["ts", "tick_no"]}
+            message["units"] = [
+                {k: u[k] for k in ["type", "x", "y", "dir"]} for u in game_state["units"]
+            ]
+
+            await ws.send(json.dumps(message))
+            await asyncio.sleep(0.025)
+    except websockets.ConnectionClosed:
+        logging.info(f"User {ws.remote_address} has left.")
+    finally:
+        logging.info(f"Should remove user {ws.remote_address}.")
+        us = [u for u in game_state["units"] if u.get("ws") == ws][0]
+        game_state["units"].remove(us)        
 
 
 async def consumer_handler(ws, path, game_state):
@@ -56,6 +65,7 @@ async def connection_handler(ws, path, game_state):
         "y": random.random() * 10,
         "speed": 1.0,
         "dir": 0,
+        "ws": ws,
     }
     game_state["units"].append(u)
     producer_task = asyncio.create_task(producer_handler(ws, path, game_state))
