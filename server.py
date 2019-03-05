@@ -47,6 +47,14 @@ async def consumer_handler(ws, path, game_state):
 
 async def connection_handler(ws, path, game_state):
     logging.info(f"client connected: {ws.remote_address}")
+    u = {
+        "type": "player",
+        "x": random.random() * 10,
+        "y": random.random() * 10,
+        "speed": 1.0,
+        "dir": 0,
+    }
+    game_state["units"].append(u)
     producer_task = asyncio.create_task(producer_handler(ws, path, game_state))
     consumer_task = asyncio.create_task(consumer_handler(ws, path, game_state))
     done, pending = await asyncio.wait(

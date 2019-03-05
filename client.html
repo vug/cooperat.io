@@ -19,8 +19,16 @@
             ctx.fillRect(0, 0, 500, 500);
 
             var msg = JSON.parse(event.data);
-            ctx.fillStyle = 'pink';
             for (var u of msg['units']) {
+                if (u['type'] == 'ghost') {
+                    ctx.fillStyle = 'pink';
+                }
+                else if (u['type'] == 'player') {
+                    ctx.fillStyle = 'blue';
+                }
+                else {
+                    ctx.fillStyle = 'red';
+                }
                 x = u["x"] * 50;
                 y = u["y"] * 50;
                 ctx.fillRect(x - 5, y - 5, 10, 10);
