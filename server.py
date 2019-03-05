@@ -2,28 +2,27 @@ import asyncio
 import datetime
 import functools
 import json
+import logging
 import math
 import random
 
 import websockets
 
 
-async def game_loop(game_state):
+def game_loop(game_state):
     """Update game state periodically.
 
     This happens independent of client connections, hence no websocket references are
     needed.
     """
-    while True:
-        ts_prev = game_state["ts"]
-        ts_curr = datetime.datetime.utcnow().timestamp()
-        delta_t = ts_curr - ts_prev
+    ts_prev = game_state["ts"]
+    ts_curr = datetime.datetime.utcnow().timestamp()
+    delta_t = ts_curr - ts_prev
 
-        update_positions(game_state, delta_t)
+    update_positions(game_state, delta_t)
 
-        game_state["ts"] = datetime.datetime.utcnow().timestamp()
-        game_state["tick_no"] += 1
-        await asyncio.sleep(0.025)
+    game_state["ts"] = datetime.datetime.utcnow().timestamp()
+    game_state["tick_no"] += 1
 
 
 def update_positions(game_state, delta_t):
@@ -34,25 +33,36 @@ def update_positions(game_state, delta_t):
             u["dir"] = (u["dir"] + random.random() * 0.4 - 0.2) % (2.0 * math.pi)
 
 
-async def handler(ws, path, game_state):
-    """A producer_handler, for now.
-
-    TODO: Rename it to connection_handler and separate producer_handler and
-    connection_handler into different co-routines. "register" them here.
-    """
-    print(f"client connected: {ws.remote_address}")
+async def producer_handler(ws, path, game_state):
     while True:
+        game_loop(game_state)
         await ws.send(json.dumps(game_state))
         await asyncio.sleep(0.025)
 
 
-async def main():
+async def consumer_handler(ws, path, game_state):
+    async for msg in ws:
+        logging.info(f"{ws.remote_address}: {msg}")
+
+
+async def connection_handler(ws, path, game_state):
+    logging.info(f"client connected: {ws.remote_address}")
+    producer_task = asyncio.create_task(producer_handler(ws, path, game_state))
+    consumer_task = asyncio.create_task(consumer_handler(ws, path, game_state))
+    done, pending = await asyncio.wait(
+        [producer_task, consumer_task], return_when=asyncio.FIRST_COMPLETED
+    )
+    for task in pending:
+        task.cancel()
+
+
+def main():
     game_state = init_game_state()
-    game_loop_routine = game_loop(game_state)
-    # Add an argument to handler
-    bound_handler = functools.partial(handler, game_state=game_state)
-    ws_server = websockets.serve(bound_handler, "localhost", 8765)
-    await asyncio.gather(game_loop_routine, ws_server)
+    # Make ws_handler accept one more argument
+    bound_handler = functools.partial(connection_handler, game_state=game_state)
+    ws_server = websockets.serve(ws_handler=bound_handler, host="localhost", port=8765)
+    asyncio.get_event_loop().run_until_complete(ws_server)
+    asyncio.get_event_loop().run_forever()
 
 
 def init_game_state():
@@ -71,4 +81,6 @@ def init_game_state():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger("asyncio").setLevel(logging.WARNING)
+    main()
