@@ -7,6 +7,11 @@
 </head>
 <body>
     <canvas id="canvas" width="500" height="500">Game Arena</canvas>
+    <br>
+    <button onclick="ws.send('up')">up</button>
+    <button onclick="ws.send('down')">down</button>
+    <button onclick="ws.send('left')">left</button>
+    <button onclick="ws.send('right')">right</button>
     <ul id="debug-list"></ul>
     <script>
         const canvas = document.getElementById('canvas');
