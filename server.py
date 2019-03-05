@@ -38,7 +38,7 @@ def game_loop(game_state):
 def update_positions(game_state, delta_t):
     for id, u in game_state.units.items():
         u["x"] = (u["x"] + math.cos(u["dir"]) * u["speed"] * delta_t) % 10
-        u["y"] = (u["y"] + math.sin(u["dir"]) * u["speed"] * delta_t) % 10
+        u["y"] = (u["y"] - math.sin(u["dir"]) * u["speed"] * delta_t) % 10
         if u["type"] == "ghost":
             u["dir"] = (u["dir"] + random.random() * 0.4 - 0.2) % (2.0 * math.pi)
 
@@ -69,6 +69,15 @@ async def producer_handler(ws, path, game_state):
 async def consumer_handler(ws, path, game_state):
     async for msg in ws:
         logging.info(f"{ws.remote_address}: {msg}")
+        unit = game_state.units[connectedSockets[ws]]
+        if msg == "up":
+            unit["dir"] = math.pi / 2
+        if msg == "down":
+            unit["dir"] = -math.pi / 2
+        if msg == "left":
+            unit["dir"] = math.pi
+        if msg == "right":
+            unit["dir"] = 0
 
 
 async def connection_handler(ws, path, game_state):
