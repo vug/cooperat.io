@@ -36,7 +36,10 @@ def update_positions(game_state, delta_t):
 async def producer_handler(ws, path, game_state):
     while True:
         game_loop(game_state)
-        await ws.send(json.dumps(game_state))
+        try:
+            await ws.send(json.dumps(game_state))
+        except websockets.ConnectionClosed:
+            logging.info(f"User {ws.remote_address} has left")            
         await asyncio.sleep(0.025)
 
 
