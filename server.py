@@ -8,6 +8,16 @@ import random
 
 import websockets
 
+connectedSockets = {}
+
+
+class GameState(object):
+    def __init__(self):
+        self.units = []
+        self.ts = datetime.datetime.utcnow().timestamp()
+        self.tick_no = 0
+        self.num_units_created = 0
+
 
 def game_loop(game_state):
     """Update game state periodically.
@@ -15,18 +25,18 @@ def game_loop(game_state):
     This happens independent of client connections, hence no websocket references are
     needed.
     """
-    ts_prev = game_state["ts"]
+    ts_prev = game_state.ts
     ts_curr = datetime.datetime.utcnow().timestamp()
     delta_t = ts_curr - ts_prev
 
     update_positions(game_state, delta_t)
 
-    game_state["ts"] = datetime.datetime.utcnow().timestamp()
-    game_state["tick_no"] += 1
+    game_state.ts = datetime.datetime.utcnow().timestamp()
+    game_state.tick_no += 1
 
 
 def update_positions(game_state, delta_t):
-    for u in game_state["units"]:
+    for u in game_state.units:
         u["x"] = (u["x"] + math.cos(u["dir"]) * u["speed"] * delta_t) % 10
         u["y"] = (u["y"] + math.sin(u["dir"]) * u["speed"] * delta_t) % 10
         if u["type"] == "ghost":
@@ -37,9 +47,9 @@ async def producer_handler(ws, path, game_state):
     try:
         while True:
             game_loop(game_state)
-            message = {key: game_state[key] for key in ["ts", "tick_no"]}
+            message = {"ts": game_state.ts, "tick_no": game_state.tick_no}
             message["units"] = [
-                {k: u[k] for k in ["type", "x", "y", "dir"]} for u in game_state["units"]
+                {k: u[k] for k in ["type", "x", "y", "dir"]} for u in game_state.units
             ]
 
             await ws.send(json.dumps(message))
@@ -47,9 +57,12 @@ async def producer_handler(ws, path, game_state):
     except websockets.ConnectionClosed:
         logging.info(f"User {ws.remote_address} has left.")
     finally:
-        logging.info(f"Should remove user {ws.remote_address}.")
-        us = [u for u in game_state["units"] if u.get("ws") == ws][0]
-        game_state["units"].remove(us)        
+        us = [u for u in game_state.units if u.get("id") == connectedSockets[ws]][0]
+        logging.info(
+            f"Removing {ws.remote_address}'s unit. id: {connected[ws]}, us: {us}"
+        )
+        game_state.units.remove(us)
+        connectedSockets.pop(ws, None)
 
 
 async def consumer_handler(ws, path, game_state):
@@ -58,16 +71,19 @@ async def consumer_handler(ws, path, game_state):
 
 
 async def connection_handler(ws, path, game_state):
-    logging.info(f"client connected: {ws.remote_address}")
+    uid = game_state.num_units_created
     u = {
         "type": "player",
         "x": random.random() * 10,
         "y": random.random() * 10,
         "speed": 1.0,
         "dir": 0,
-        "ws": ws,
+        "id": uid,
     }
-    game_state["units"].append(u)
+    logging.info(f"client connected: {ws.remote_address}. unit: f{u}")
+    connectedSockets[ws] = uid
+    game_state.units.append(u)
+    game_state.num_units_created += 1
     producer_task = asyncio.create_task(producer_handler(ws, path, game_state))
     consumer_task = asyncio.create_task(consumer_handler(ws, path, game_state))
     done, pending = await asyncio.wait(
@@ -87,7 +103,7 @@ def main():
 
 
 def init_game_state():
-    gs = {"units": [], "ts": datetime.datetime.utcnow().timestamp(), "tick_no": 0}
+    gs = GameState()
     n_ghosts = 10
     for _ in range(n_ghosts):
         u = {
@@ -97,7 +113,8 @@ def init_game_state():
             "speed": 1.0,
             "dir": random.random() * math.pi,
         }
-        gs["units"].append(u)
+        gs.units.append(u)
+        gs.num_units_created += 1
     return gs
 
 
