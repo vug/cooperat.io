@@ -51,7 +51,12 @@ async def producer_handler(ws, path, game_state):
             message["units"] = []
             for uid, u in game_state.units.items():
                 d = {k: u[k] for k in ["type", "x", "y", "dir"]}
-                if uid == connectedSockets[ws]:
+                if u["type"] == "player" and not u["active"]:
+                    continue
+                if u["type"] == "player" and u["active"]:
+                    d.update({k: u[k] for k in ["nickname", "class"]})
+                is_clients_unit = uid == connectedSockets[ws]
+                if is_clients_unit:
                     d["type"] = "me"
                 message["units"].append(d)
 
@@ -67,17 +72,30 @@ async def producer_handler(ws, path, game_state):
 
 
 async def consumer_handler(ws, path, game_state):
-    async for msg in ws:
-        logging.info(f"{ws.remote_address}: {msg}")
+    async for msg_str in ws:
+        logging.info(f"{ws.remote_address}: {msg_str}")
+        msg = json.loads(msg_str)
         unit = game_state.units[connectedSockets[ws]]
-        if msg == "up":
-            unit["dir"] = math.pi / 2
-        if msg == "down":
-            unit["dir"] = -math.pi / 2
-        if msg == "left":
-            unit["dir"] = math.pi
-        if msg == "right":
-            unit["dir"] = 0
+        msg_type = msg["type"]
+
+        if msg_type == "init":
+            nickname = msg["nickname"]
+            unit_class = msg["class"]
+            unit["nickname"] = nickname
+            unit["class"] = unit_class
+            unit["active"] = True
+            # await ws.send(json.dumps)
+
+        if msg_type == "command":
+            command = msg["command"]
+            if command == "up":
+                unit["dir"] = math.pi / 2
+            if command == "down":
+                unit["dir"] = -math.pi / 2
+            if command == "left":
+                unit["dir"] = math.pi
+            if command == "right":
+                unit["dir"] = 0
 
 
 async def connection_handler(ws, path, game_state):
@@ -88,6 +106,7 @@ async def connection_handler(ws, path, game_state):
         "y": random.random() * 10,
         "speed": 1.0,
         "dir": 0,
+        "active": False,
     }
     logging.info(f"client connected: {ws.remote_address}. Given id: {uid}.")
     connectedSockets[ws] = uid
