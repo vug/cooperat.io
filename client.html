@@ -7,7 +7,7 @@
     <style>
         #welcome-screen {
             position: fixed;
-            background-color: rgba(200, 180, 80, 0.5);
+            background-color:#3498db;
             width: 100%;
             height: 100%;
             top: 0;
@@ -25,35 +25,53 @@
             transform: translate(-50%,-50%);
             -ms-transform: translate(-50%,-50%);
         }
-        #welcome-container>button,input {
+        #welcome-choices>button,input {
             font-size: 40px;
+        }
+        #welcome-spinner {
+            border: 16px solid #f3f3f3;
+            border-top: 16px solid #3498db;
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <div id="welcome-screen">
         <div id="welcome-container">
-            Nickname:<br>
-            <input id="nickname-input" type="text" name="nickname">
-            <br>
-            Choose Class:<br>
-            <button onclick="chooseClass('warrior');">Warrior</button> 
-            <button onclick="chooseClass('psychic');">Psychic</button>        
+            <div id="welcome-choices">
+                Nickname:<br>
+                <input id="nickname-input" type="text" name="nickname">
+                <br>
+                Choose Class:<br>
+                <button onclick="chooseClass('warrior');">Warrior</button> 
+                <button onclick="chooseClass('psychic');">Psychic</button>                
+            </div>
+            <div id="welcome-spinner" style="display: none;"></div>
         </div>
     </div>
     <div id="game-screen" style="display: none;">
         <canvas id="canvas" width="500" height="500">Game Arena</canvas>
         <br>
-        <button onclick="ws.send('up')">up</button>
-        <button onclick="ws.send('down')">down</button>
-        <button onclick="ws.send('left')">left</button>
-        <button onclick="ws.send('right')">right</button>
+        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up</button>
+        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down</button>
+        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left</button>
+        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right</button>
         <ul id="debug-list"></ul>        
     </div>
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        ctx.font = "10px Arial";
         const welcomeScreen = document.getElementById('welcome-screen');
+        const welcomeChoices = document.getElementById('welcome-choices');
+        const welcomeSpinner = document.getElementById('welcome-spinner');
         const gameScreen = document.getElementById('game-screen');
         const nickNameInput = document.getElementById('nickname-input');
         var ws = null;
@@ -65,32 +83,48 @@
                     "Tsuyu Asui", "Fumikage Tokoyami", "Kyoka Jiro", "Momo Yaoyorozu", "Mei Hatsume"];
                     nickname = names[Math.floor(Math.random() * names.length)];
             }
-            welcomeScreen.style.display = "none";
-            gameScreen.style.display = "block";
-            startGameSession();
+            welcomeChoices.style.display = "none";
+            welcomeSpinner.style.display = "block";
+
+            ws = new WebSocket('ws://127.0.0.1:8765');
+            ws.onopen = function(event) {
+                welcomeScreen.style.display = "none";
+                gameScreen.style.display = "block";
+                ws.send(JSON.stringify({"type": "init", "nickname": nickname, "class": cls}));
+                startGameSession();
+            };
         }
 
         function startGameSession() {
-            ws = new WebSocket('ws://127.0.0.1:8765');
-
             ws.onmessage = function(event) {
                 ctx.fillStyle = 'grey';
                 ctx.fillRect(0, 0, 500, 500);
 
                 var msg = JSON.parse(event.data);
                 for (var u of msg['units']) {
-                    if (u['type'] == 'ghost') {
-                        ctx.fillStyle = 'pink';
-                    }
-                    else if (u['type'] == 'me') {
-                        ctx.fillStyle = 'blue';
-                    }
-                    else if (u['type'] == 'player') {
-                        ctx.fillStyle = 'orange';
-                    }
                     x = u["x"] * 50;
                     y = u["y"] * 50;
+                    if (u['type'] === 'ghost') {
+                        ctx.fillStyle = 'pink';
+                    }
+                    else if (u['type'] === 'me') {
+                        ctx.fillStyle = 'blue';
+                        // ctx.strokeStyle = 'blue';
+                        // ctx.lineWidth = 3;
+                        // ctx.strokeRect(x - 5, y - 5, 10, 10);
+                    }
+                    else if (u['type'] === 'player') {
+                        if (u['class'] === 'warrior') {
+                            ctx.fillStyle = 'orange';
+                        }
+                        else if (u['class'] === 'psychic') {
+                            ctx.fillStyle = 'green';
+                        }
+                    }
                     ctx.fillRect(x - 5, y - 5, 10, 10);
+                    if ('nickname' in u) {
+                        ctx.fillText(u['nickname'], x - 5, y + 15);
+                    }
                 }
 
                 var debugList = document.getElementById('debug-list');
