@@ -34,13 +34,14 @@
     <div id="welcome-screen">
         <div id="welcome-container">
             Nickname:<br>
-            <input type="text" name="nickname">
+            <input id="nickname-input" type="text" name="nickname">
             <br>
             Choose Class:<br>
-            <button>Warrior</button> <button>Psychic</button>        
+            <button onclick="chooseClass('warrior');">Warrior</button> 
+            <button onclick="chooseClass('psychic');">Psychic</button>        
         </div>
     </div>
-    <div id="game-screen">
+    <div id="game-screen" style="display: none;">
         <canvas id="canvas" width="500" height="500">Game Arena</canvas>
         <br>
         <button onclick="ws.send('up')">up</button>
@@ -52,38 +53,57 @@
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const nickNameInput = document.getElementById('nickname-input');
+        var ws = null;
 
-        var ws = new WebSocket('ws://127.0.0.1:8765');
-
-        ws.onmessage = function(event) {
-            ctx.fillStyle = 'grey';
-            ctx.fillRect(0, 0, 500, 500);
-
-            var msg = JSON.parse(event.data);
-            for (var u of msg['units']) {
-                if (u['type'] == 'ghost') {
-                    ctx.fillStyle = 'pink';
-                }
-                else if (u['type'] == 'me') {
-                    ctx.fillStyle = 'blue';
-                }
-                else if (u['type'] == 'player') {
-                    ctx.fillStyle = 'orange';
-                }
-                x = u["x"] * 50;
-                y = u["y"] * 50;
-                ctx.fillRect(x - 5, y - 5, 10, 10);
+        function chooseClass(cls) {
+            var nickname = nickNameInput.value;
+            if (nickname === "") {
+                const names = ["Izuku Midoriya", "Katsuki Bakugo", "Shoto Todoroki", "Tenya Iida", "Ochaco Uraraka",
+                    "Tsuyu Asui", "Fumikage Tokoyami", "Kyoka Jiro", "Momo Yaoyorozu", "Mei Hatsume"];
+                    nickname = names[Math.floor(Math.random() * names.length)];
             }
+            welcomeScreen.style.display = "none";
+            gameScreen.style.display = "block";
+            startGameSession();
+        }
 
-            var debugList = document.getElementById('debug-list');
-            var item = document.createElement('li');
-            content = document.createTextNode("tick no: " + msg["tick_no"] + ", ts: " + msg["ts"]);
-            item.appendChild(content);
-            debugList.prepend(item);
-            if (debugList.children.length > 10) {  // Keep 10 most recent items
-                debugList.removeChild(debugList.lastChild);
-            }
-        };
+        function startGameSession() {
+            ws = new WebSocket('ws://127.0.0.1:8765');
+
+            ws.onmessage = function(event) {
+                ctx.fillStyle = 'grey';
+                ctx.fillRect(0, 0, 500, 500);
+
+                var msg = JSON.parse(event.data);
+                for (var u of msg['units']) {
+                    if (u['type'] == 'ghost') {
+                        ctx.fillStyle = 'pink';
+                    }
+                    else if (u['type'] == 'me') {
+                        ctx.fillStyle = 'blue';
+                    }
+                    else if (u['type'] == 'player') {
+                        ctx.fillStyle = 'orange';
+                    }
+                    x = u["x"] * 50;
+                    y = u["y"] * 50;
+                    ctx.fillRect(x - 5, y - 5, 10, 10);
+                }
+
+                var debugList = document.getElementById('debug-list');
+                var item = document.createElement('li');
+                content = document.createTextNode("tick no: " + msg["tick_no"] + ", ts: " + msg["ts"]);
+                item.appendChild(content);
+                debugList.prepend(item);
+                if (debugList.children.length > 10) {  // Keep 10 most recent items
+                    debugList.removeChild(debugList.lastChild);
+                }
+            };
+        }
+
     </script>
 </body>
 </html>
