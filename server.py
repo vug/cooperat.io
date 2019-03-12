@@ -17,6 +17,7 @@ class GameState(object):
         self.ts = datetime.datetime.utcnow().timestamp()
         self.tick_no = 0
         self.num_units_created = 0
+        self.world_size = 100
 
 
 def game_loop(game_state):
@@ -111,6 +112,9 @@ async def handshake(ws, game_state):
         return False
     nickname = msg["nickname"]
     unit_class = msg["class"]
+
+    msg = {"type": "init", "world_size": game_state.world_size}
+    await ws.send(json.dumps(msg))
 
     uid = game_state.num_units_created
     u = {

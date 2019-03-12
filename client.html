@@ -88,19 +88,29 @@
 
             ws = new WebSocket('ws://127.0.0.1:8765');
             ws.onopen = function(event) {
-                welcomeScreen.style.display = "none";
-                gameScreen.style.display = "block";
-                ws.send(JSON.stringify({"type": "init", "nickname": nickname, "class": cls}));
-                startGameSession();
+                var msg = {"type": "init", "nickname": nickname, "class": cls};
+                ws.send(JSON.stringify(msg));
+                console.log("first message sent ", msg);
             };
+            ws.onmessage = function(event) {
+                var msg = JSON.parse(event.data);
+                var worldSize = msg['world_size'];
+                console.log("first message received ", msg);
+                startGameSession(worldSize);
+            }
         }
 
-        function startGameSession() {
+        function startGameSession(worldSize) {
+            welcomeScreen.style.display = "none";
+            gameScreen.style.display = "block";
+            console.log("Entering game loop...");
+            
             ws.onmessage = function(event) {
+                var msg = JSON.parse(event.data);
+
                 ctx.fillStyle = 'grey';
                 ctx.fillRect(0, 0, 500, 500);
 
-                var msg = JSON.parse(event.data);
                 for (var u of msg['units']) {
                     x = u["x"] * 50;
                     y = u["y"] * 50;
@@ -109,9 +119,6 @@
                     }
                     else if (u['type'] === 'me') {
                         ctx.fillStyle = 'blue';
-                        // ctx.strokeStyle = 'blue';
-                        // ctx.lineWidth = 3;
-                        // ctx.strokeRect(x - 5, y - 5, 10, 10);
                     }
                     else if (u['type'] === 'player') {
                         if (u['class'] === 'warrior') {
