@@ -68,7 +68,6 @@
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        ctx.font = "10px Arial";
         const welcomeScreen = document.getElementById('welcome-screen');
         const welcomeChoices = document.getElementById('welcome-choices');
         const welcomeSpinner = document.getElementById('welcome-spinner');
@@ -88,51 +87,62 @@
 
             ws = new WebSocket('ws://127.0.0.1:8765');
             ws.onopen = function(event) {
-                welcomeScreen.style.display = "none";
-                gameScreen.style.display = "block";
-                ws.send(JSON.stringify({"type": "init", "nickname": nickname, "class": cls}));
-                startGameSession();
+                var msg = {"type": "init", "nickname": nickname, "class": cls};
+                ws.send(JSON.stringify(msg));
+                console.log("first message sent ", msg);
             };
+            ws.onmessage = function(event) {
+                var msg = JSON.parse(event.data);
+                var worldSize = msg['world_size'];
+                ctx.font = "" + 500 / worldSize + "px Arial";
+                console.log("first message received ", msg);
+                startGameSession(worldSize);
+            }
         }
 
-        function startGameSession() {
-            ws.onmessage = function(event) {
-                ctx.fillStyle = 'grey';
-                ctx.fillRect(0, 0, 500, 500);
+        function render(units, worldSize) {
+            var scale = 500 / worldSize;
+            ctx.fillStyle = 'grey';
+            ctx.fillRect(0, 0, 500, 500);
 
-                var msg = JSON.parse(event.data);
-                for (var u of msg['units']) {
-                    x = u["x"] * 50;
-                    y = u["y"] * 50;
-                    if (u['type'] === 'ghost') {
-                        ctx.fillStyle = 'pink';
-                    }
-                    else if (u['type'] === 'me') {
-                        ctx.fillStyle = 'blue';
-                        // ctx.strokeStyle = 'blue';
-                        // ctx.lineWidth = 3;
-                        // ctx.strokeRect(x - 5, y - 5, 10, 10);
-                    }
-                    else if (u['type'] === 'player') {
-                        if (u['class'] === 'warrior') {
-                            ctx.fillStyle = 'orange';
-                        }
-                        else if (u['class'] === 'psychic') {
-                            ctx.fillStyle = 'green';
-                        }
-                    }
-                    ctx.fillRect(x - 5, y - 5, 10, 10);
-                    if ('nickname' in u) {
-                        ctx.fillText(u['nickname'], x - 5, y + 15);
-                    }
+            for (var u of units) {
+                if (u['type'] === 'ghost') {
+                    ctx.fillStyle = 'pink';
                 }
+                else if (u['type'] === 'me') {
+                    ctx.fillStyle = 'blue';
+                }
+                else if (u['type'] === 'player' && u['class'] === 'warrior') {
+                    ctx.fillStyle = 'orange';
+                }
+                else if (u['type'] === 'player' && u['class'] === 'psychic') {
+                    ctx.fillStyle = 'green';
+                }                
+                x = u["x"] * scale;
+                y = u["y"] * scale;
+                ctx.fillRect(x - scale * 0.5, y - scale * 0.5, scale, scale);
+                if ('nickname' in u) {
+                    ctx.fillText(u['nickname'], x - scale * 0.5, y + scale * 1.5);
+                }
+            }
+        }
+
+        function startGameSession(worldSize) {
+            welcomeScreen.style.display = "none";
+            gameScreen.style.display = "block";
+            console.log("Entering game loop...");
+
+            ws.onmessage = function(event) {
+                var msg = JSON.parse(event.data);
+                var units = msg['units'];
+                render(units, worldSize);
 
                 var debugList = document.getElementById('debug-list');
                 var item = document.createElement('li');
-                content = document.createTextNode("tick no: " + msg["tick_no"] + ", ts: " + msg["ts"]);
+                content = document.createTextNode("tick no: " + msg["tick_no"] + ", ts (server): " + msg["ts"] + ", ts (client): " + Date.now() + ", lag: " + (new Date().getTime() - msg["ts"] * 1000 + new Date().getTimezoneOffset() * 60 * 1000));
                 item.appendChild(content);
                 debugList.prepend(item);
-                if (debugList.children.length > 10) {  // Keep 10 most recent items
+                if (debugList.children.length > 5) {  // Keep 5 most recent items
                     debugList.removeChild(debugList.lastChild);
                 }
             };

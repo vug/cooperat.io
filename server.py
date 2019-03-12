@@ -17,6 +17,7 @@ class GameState(object):
         self.ts = datetime.datetime.utcnow().timestamp()
         self.tick_no = 0
         self.num_units_created = 0
+        self.world_size = 50
 
 
 def game_loop(game_state):
@@ -37,8 +38,12 @@ def game_loop(game_state):
 
 def update_positions(game_state, delta_t):
     for id, u in game_state.units.items():
-        u["x"] = (u["x"] + math.cos(u["dir"]) * u["speed"] * delta_t) % 10
-        u["y"] = (u["y"] - math.sin(u["dir"]) * u["speed"] * delta_t) % 10
+        u["x"] = (
+            u["x"] + math.cos(u["dir"]) * u["speed"] * delta_t
+        ) % game_state.world_size
+        u["y"] = (
+            u["y"] - math.sin(u["dir"]) * u["speed"] * delta_t
+        ) % game_state.world_size
         if u["type"] == "ghost":
             u["dir"] = (u["dir"] + random.random() * 0.4 - 0.2) % (2.0 * math.pi)
 
@@ -51,9 +56,7 @@ async def producer_handler(ws, path, game_state):
             message["units"] = []
             for uid, u in game_state.units.items():
                 d = {k: u[k] for k in ["type", "x", "y", "dir"]}
-                if u["type"] == "player" and not u["active"]:
-                    continue
-                if u["type"] == "player" and u["active"]:
+                if u["type"] == "player":
                     d.update({k: u[k] for k in ["nickname", "class"]})
                 is_clients_unit = uid == connectedSockets[ws]
                 if is_clients_unit:
@@ -78,14 +81,6 @@ async def consumer_handler(ws, path, game_state):
         unit = game_state.units[connectedSockets[ws]]
         msg_type = msg["type"]
 
-        if msg_type == "init":
-            nickname = msg["nickname"]
-            unit_class = msg["class"]
-            unit["nickname"] = nickname
-            unit["class"] = unit_class
-            unit["active"] = True
-            # await ws.send(json.dumps)
-
         if msg_type == "command":
             command = msg["command"]
             if command == "up":
@@ -99,19 +94,10 @@ async def consumer_handler(ws, path, game_state):
 
 
 async def connection_handler(ws, path, game_state):
-    uid = game_state.num_units_created
-    u = {
-        "type": "player",
-        "x": random.random() * 10,
-        "y": random.random() * 10,
-        "speed": 1.0,
-        "dir": 0,
-        "active": False,
-    }
-    logging.info(f"client connected: {ws.remote_address}. Given id: {uid}.")
-    connectedSockets[ws] = uid
-    game_state.units[uid] = u
-    game_state.num_units_created += 1
+    """Register producer and consumer tasks after initial handshake with the client."""
+    is_connection_established = await handshake(ws, game_state)
+    if not is_connection_established:
+        return
     producer_task = asyncio.create_task(producer_handler(ws, path, game_state))
     consumer_task = asyncio.create_task(consumer_handler(ws, path, game_state))
     done, pending = await asyncio.wait(
@@ -119,6 +105,44 @@ async def connection_handler(ws, path, game_state):
     )
     for task in pending:
         task.cancel()
+
+
+async def handshake(ws, game_state):
+    """Initial synchronous handshake with the client.
+
+    Wait for the nickname and unit class. Send essential information such as
+    the size of the world.
+
+    Return whether handshake was successful or not.
+    """
+    logging.info(f"client connected: {ws.remote_address}")
+    msg_str = await ws.recv()
+    msg = json.loads(msg_str)
+    logging.info(f"{ws.remote_address}'s first message: {msg}")
+    msg_type = msg["type"]
+    if msg_type != "init":
+        return False
+    nickname = msg["nickname"]
+    unit_class = msg["class"]
+
+    msg = {"type": "init", "world_size": game_state.world_size}
+    await ws.send(json.dumps(msg))
+
+    uid = game_state.num_units_created
+    u = {
+        "type": "player",
+        "x": random.random() * game_state.world_size,
+        "y": random.random() * game_state.world_size,
+        "speed": 2.0,
+        "dir": 0,
+        "nickname": nickname,
+        "class": unit_class,
+    }
+    connectedSockets[ws] = uid
+    game_state.units[uid] = u
+    game_state.num_units_created += 1
+    logging.info(f"Client is given id {uid} and added to game.")
+    return True
 
 
 def main():
@@ -136,9 +160,9 @@ def init_game_state():
     for _ in range(n_ghosts):
         unit = {
             "type": "ghost",
-            "x": random.random() * 10,
-            "y": random.random() * 10,
-            "speed": 1.0,
+            "x": random.random() * gs.world_size,
+            "y": random.random() * gs.world_size,
+            "speed": 1.5,
             "dir": random.random() * math.pi,
         }
         uid = gs.num_units_created
