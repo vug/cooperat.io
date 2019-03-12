@@ -17,7 +17,7 @@ class GameState(object):
         self.ts = datetime.datetime.utcnow().timestamp()
         self.tick_no = 0
         self.num_units_created = 0
-        self.world_size = 100
+        self.world_size = 50
 
 
 def game_loop(game_state):
@@ -38,8 +38,12 @@ def game_loop(game_state):
 
 def update_positions(game_state, delta_t):
     for id, u in game_state.units.items():
-        u["x"] = (u["x"] + math.cos(u["dir"]) * u["speed"] * delta_t) % 10
-        u["y"] = (u["y"] - math.sin(u["dir"]) * u["speed"] * delta_t) % 10
+        u["x"] = (
+            u["x"] + math.cos(u["dir"]) * u["speed"] * delta_t
+        ) % game_state.world_size
+        u["y"] = (
+            u["y"] - math.sin(u["dir"]) * u["speed"] * delta_t
+        ) % game_state.world_size
         if u["type"] == "ghost":
             u["dir"] = (u["dir"] + random.random() * 0.4 - 0.2) % (2.0 * math.pi)
 
@@ -90,6 +94,7 @@ async def consumer_handler(ws, path, game_state):
 
 
 async def connection_handler(ws, path, game_state):
+    """Register producer and consumer tasks after initial handshake with the client."""
     is_connection_established = await handshake(ws, game_state)
     if not is_connection_established:
         return
@@ -103,6 +108,13 @@ async def connection_handler(ws, path, game_state):
 
 
 async def handshake(ws, game_state):
+    """Initial synchronous handshake with the client.
+
+    Wait for the nickname and unit class. Send essential information such as
+    the size of the world.
+
+    Return whether handshake was successful or not.
+    """
     logging.info(f"client connected: {ws.remote_address}")
     msg_str = await ws.recv()
     msg = json.loads(msg_str)
@@ -119,9 +131,9 @@ async def handshake(ws, game_state):
     uid = game_state.num_units_created
     u = {
         "type": "player",
-        "x": random.random() * 10,
-        "y": random.random() * 10,
-        "speed": 1.0,
+        "x": random.random() * game_state.world_size,
+        "y": random.random() * game_state.world_size,
+        "speed": 2.0,
         "dir": 0,
         "nickname": nickname,
         "class": unit_class,
@@ -148,9 +160,9 @@ def init_game_state():
     for _ in range(n_ghosts):
         unit = {
             "type": "ghost",
-            "x": random.random() * 10,
-            "y": random.random() * 10,
-            "speed": 1.0,
+            "x": random.random() * gs.world_size,
+            "y": random.random() * gs.world_size,
+            "speed": 1.5,
             "dir": random.random() * math.pi,
         }
         uid = gs.num_units_created
