@@ -105,6 +105,21 @@
             ctx.fillStyle = 'grey';
             ctx.fillRect(0, 0, 500, 500);
 
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
+            var gridSize = 5;
+            for (var k = 0; k < worldSize; k += gridSize) {
+                var deltaL = k * scale;
+                ctx.beginPath();
+                ctx.moveTo(deltaL, 0);
+                ctx.lineTo(deltaL, 500);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, deltaL);
+                ctx.lineTo(500, deltaL);
+                ctx.stroke();                
+            }            
+
             for (var u of units) {
                 if (u['type'] === 'ghost') {
                     ctx.fillStyle = 'pink';
