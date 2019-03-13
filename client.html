@@ -62,7 +62,9 @@
         <button onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up</button>
         <br>
         <button onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left</button>
-        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right</button>
+        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right</button>  
+        <button id="mark-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "mark"}))'>mark</button>
+        <button id="attack-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "attack"}))'>attack</button>
         <br>
         <button onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down</button>
         <ul id="debug-list"></ul>        
@@ -78,6 +80,12 @@
         var ws = null;
 
         function chooseClass(cls) {
+            if (cls === "warrior") {
+                document.getElementById("attack-button").style.display = "inline";
+            }
+            else if (cls === "psychic") {
+                document.getElementById("mark-button").style.display = "inline";
+            }
             var nickname = nickNameInput.value;
             if (nickname === "") {
                 const names = ["Izuku Midoriya", "Katsuki Bakugo", "Shoto Todoroki", "Tenya Iida", "Ochaco Uraraka",

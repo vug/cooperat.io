@@ -62,6 +62,8 @@ async def producer_handler(ws, path, game_state):
                 if is_client_warrior and is_unit_ghost and not u["is_marked"]:
                     continue
                 d = {k: u[k] for k in ["type", "x", "y", "dir"]}
+                if is_unit_ghost:
+                    d.update({k: u[k] for k in ["is_marked"]})
                 if u["type"] == "player":
                     d.update({k: u[k] for k in ["nickname", "class"]})
                 is_unit_of_client = uid == client_uid
@@ -84,19 +86,44 @@ async def consumer_handler(ws, path, game_state):
     async for msg_str in ws:
         logging.info(f"{ws.remote_address}: {msg_str}")
         msg = json.loads(msg_str)
-        unit = game_state.units[connectedSockets[ws]]
+        client_unit = game_state.units[connectedSockets[ws]]
         msg_type = msg["type"]
 
         if msg_type == "command":
             command = msg["command"]
             if command == "up":
-                unit["dir"] = math.pi / 2
+                client_unit["dir"] = math.pi / 2
             if command == "down":
-                unit["dir"] = -math.pi / 2
+                client_unit["dir"] = -math.pi / 2
             if command == "left":
-                unit["dir"] = math.pi
+                client_unit["dir"] = math.pi
             if command == "right":
-                unit["dir"] = 0
+                client_unit["dir"] = 0
+            if command == "mark":
+                ghost_id, distance = get_closest_ghost(game_state, client_unit)
+                ghost = game_state.units.get(ghost_id, None)
+                if ghost and distance < 5:
+                    ghost["is_marked"] = True
+            if command == "attack":
+                ghost_id, distance = get_closest_ghost(game_state, client_unit)
+                if ghost_id and distance < 5:
+                    game_state.units.pop(ghost_id)
+
+
+def get_closest_ghost(game_state, client_unit):
+    closest_unit_id = None
+    closest_distance = 1_000_000
+    for uid, u in game_state.units.items():
+        if u["type"] != "ghost":
+            continue
+        dist2 = math.pow(u["x"] - client_unit["x"], 2.0) + math.pow(
+            u["y"] - client_unit["y"], 2.0
+        )
+        dist = math.sqrt(dist2)
+        if dist < closest_distance:
+            closest_distance = dist
+            closest_unit_id = uid
+    return (closest_unit_id, closest_distance)
 
 
 async def connection_handler(ws, path, game_state):
@@ -136,6 +163,7 @@ async def handshake(ws, game_state):
 
     uid = game_state.num_units_created
     u = {
+        "id": uid,
         "type": "player",
         "x": random.random() * game_state.world_size,
         "y": random.random() * game_state.world_size,
@@ -164,7 +192,9 @@ def init_game_state():
     gs = GameState()
     n_ghosts = 10
     for _ in range(n_ghosts):
+        uid = gs.num_units_created
         unit = {
+            "id": uid,
             "type": "ghost",
             "x": random.random() * gs.world_size,
             "y": random.random() * gs.world_size,
@@ -172,7 +202,6 @@ def init_game_state():
             "dir": random.random() * math.pi,
             "is_marked": False,
         }
-        uid = gs.num_units_created
         gs.units[uid] = unit
         gs.num_units_created += 1
     return gs
