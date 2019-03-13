@@ -17,7 +17,7 @@ class GameState(object):
         self.ts = datetime.datetime.utcnow().timestamp()
         self.tick_no = 0
         self.num_units_created = 0
-        self.world_size = 50
+        self.world_size = 30
 
 
 def game_loop(game_state):
@@ -54,12 +54,18 @@ async def producer_handler(ws, path, game_state):
             game_loop(game_state)
             message = {"ts": game_state.ts, "tick_no": game_state.tick_no}
             message["units"] = []
+            client_uid = connectedSockets[ws]
+            client_unit = game_state.units[client_uid]
+            is_client_warrior = client_unit["class"] == "warrior"
             for uid, u in game_state.units.items():
+                is_unit_ghost = u["type"] == "ghost"
+                if is_client_warrior and is_unit_ghost and not u["is_marked"]:
+                    continue
                 d = {k: u[k] for k in ["type", "x", "y", "dir"]}
                 if u["type"] == "player":
                     d.update({k: u[k] for k in ["nickname", "class"]})
-                is_clients_unit = uid == connectedSockets[ws]
-                if is_clients_unit:
+                is_unit_of_client = uid == client_uid
+                if is_unit_of_client:
                     d["type"] = "me"
                 message["units"].append(d)
 
@@ -164,6 +170,7 @@ def init_game_state():
             "y": random.random() * gs.world_size,
             "speed": 1.5,
             "dir": random.random() * math.pi,
+            "is_marked": False,
         }
         uid = gs.num_units_created
         gs.units[uid] = unit
