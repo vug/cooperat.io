@@ -60,9 +60,11 @@
         <canvas id="canvas" width="500" height="500">Game Arena</canvas>
         <br>
         <button onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up</button>
-        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down</button>
+        <br>
         <button onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left</button>
         <button onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right</button>
+        <br>
+        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down</button>
         <ul id="debug-list"></ul>        
     </div>
     <script>
