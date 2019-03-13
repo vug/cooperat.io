@@ -18,6 +18,7 @@ class GameState(object):
         self.tick_no = 0
         self.num_units_created = 0
         self.world_size = 30
+        self.player_interaction_radius = 3.0
 
 
 def game_loop(game_state):
@@ -100,18 +101,18 @@ async def consumer_handler(ws, path, game_state):
             if command == "right":
                 client_unit["dir"] = 0
             if command == "mark":
-                ghost_id, distance = get_closest_ghost(game_state, client_unit)
+                ghost_id, distance = get_target(game_state, client_unit)
                 ghost = game_state.units.get(ghost_id, None)
-                if ghost and distance < 5:
+                if ghost:
                     ghost["is_marked"] = True
             if command == "attack":
-                ghost_id, distance = get_closest_ghost(game_state, client_unit)
-                if ghost_id and distance < 5:
+                ghost_id, distance = get_target(game_state, client_unit)
+                if ghost_id is not None:
                     game_state.units.pop(ghost_id)
 
 
-def get_closest_ghost(game_state, client_unit):
-    closest_unit_id = None
+def get_target(game_state, client_unit):
+    closest_ghost_id = None
     closest_distance = 1_000_000
     for uid, u in game_state.units.items():
         if u["type"] != "ghost":
@@ -122,8 +123,10 @@ def get_closest_ghost(game_state, client_unit):
         dist = math.sqrt(dist2)
         if dist < closest_distance:
             closest_distance = dist
-            closest_unit_id = uid
-    return (closest_unit_id, closest_distance)
+            closest_ghost_id = uid
+    if closest_distance > game_state.player_interaction_radius:
+        return (None, None)
+    return (closest_ghost_id, closest_distance)
 
 
 async def connection_handler(ws, path, game_state):
@@ -158,7 +161,11 @@ async def handshake(ws, game_state):
     nickname = msg["nickname"]
     unit_class = msg["class"]
 
-    msg = {"type": "init", "world_size": game_state.world_size}
+    msg = {
+        "type": "init",
+        "world_size": game_state.world_size,
+        "interaction_radius": game_state.player_interaction_radius,
+    }
     await ws.send(json.dumps(msg))
 
     uid = game_state.num_units_created
@@ -167,7 +174,7 @@ async def handshake(ws, game_state):
         "type": "player",
         "x": random.random() * game_state.world_size,
         "y": random.random() * game_state.world_size,
-        "speed": 2.0,
+        "speed": 3.0,
         "dir": 0,
         "nickname": nickname,
         "class": unit_class,

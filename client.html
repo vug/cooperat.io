@@ -78,8 +78,10 @@
         const gameScreen = document.getElementById('game-screen');
         const nickNameInput = document.getElementById('nickname-input');
         var ws = null;
+        var GAME_INFO = {};
 
         function chooseClass(cls) {
+            playerClass = cls;
             if (cls === "warrior") {
                 document.getElementById("attack-button").style.display = "inline";
             }
@@ -103,22 +105,24 @@
             };
             ws.onmessage = function(event) {
                 var msg = JSON.parse(event.data);
-                var worldSize = msg['world_size'];
-                ctx.font = "" + 500 / worldSize + "px Arial";
+                GAME_INFO['world_size'] = msg['world_size'];
+                GAME_INFO['interaction_radius'] = msg['interaction_radius'];
+                GAME_INFO['player_class'] = cls;
+                ctx.font = "" + 500 / GAME_INFO['world_size'] + "px Arial";
                 console.log("first message received ", msg);
-                startGameSession(worldSize);
+                startGameSession();
             }
         }
 
-        function render(units, worldSize) {
-            var scale = 500 / worldSize;
-            ctx.fillStyle = 'grey';
+        function render(units) {
+            var scale = 500 / GAME_INFO['world_size'];
+            ctx.fillStyle = "rgb(200, 200, 200)";
             ctx.fillRect(0, 0, 500, 500);
 
             ctx.lineWidth = 2;
             ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
             var gridSize = 5;
-            for (var k = 0; k < worldSize; k += gridSize) {
+            for (var k = 0; k < GAME_INFO['world_size']; k += gridSize) {
                 var deltaL = k * scale;
                 ctx.beginPath();
                 ctx.moveTo(deltaL, 0);
@@ -130,12 +134,26 @@
                 ctx.stroke();                
             }            
 
+            
             for (var u of units) {
+                x = u["x"] * scale;
+                y = u["y"] * scale;                
                 if (u['type'] === 'ghost') {
                     ctx.fillStyle = 'pink';
+                    if (u['is_marked']) {
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = 'green';
+                        ctx.strokeRect(x - scale * 0.5, y - scale * 0.5, scale, scale);
+                    }
                 }
                 else if (u['type'] === 'me') {
                     ctx.fillStyle = 'blue';
+                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = GAME_INFO['player_class'] === 'warrior' ? 'orange' : 'green';
+                    ctx.beginPath();
+                    var r = GAME_INFO['interaction_radius'] * scale;
+                    ctx.arc(x, y, r, 0, 2 * Math.PI);
+                    ctx.stroke();
                 }
                 else if (u['type'] === 'player' && u['class'] === 'warrior') {
                     ctx.fillStyle = 'orange';
@@ -143,8 +161,6 @@
                 else if (u['type'] === 'player' && u['class'] === 'psychic') {
                     ctx.fillStyle = 'green';
                 }                
-                x = u["x"] * scale;
-                y = u["y"] * scale;
                 ctx.fillRect(x - scale * 0.5, y - scale * 0.5, scale, scale);
                 if ('nickname' in u) {
                     ctx.fillText(u['nickname'], x - scale * 0.5, y + scale * 1.5);
@@ -152,7 +168,7 @@
             }
         }
 
-        function startGameSession(worldSize) {
+        function startGameSession() {
             welcomeScreen.style.display = "none";
             gameScreen.style.display = "block";
             console.log("Entering game loop...");
@@ -160,7 +176,7 @@
             ws.onmessage = function(event) {
                 var msg = JSON.parse(event.data);
                 var units = msg['units'];
-                render(units, worldSize);
+                render(units);
 
                 var debugList = document.getElementById('debug-list');
                 var item = document.createElement('li');
