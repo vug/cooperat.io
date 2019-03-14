@@ -112,6 +112,8 @@ async def consumer_handler(ws, path, game_state):
         logging.info(f"{ws.remote_address}: {msg_str}")
         msg = json.loads(msg_str)
         client_unit = game_state.units[connectedSockets[ws]]
+        if client_unit["type"] == "ghost":
+            continue
         msg_type = msg["type"]
 
         if msg_type == "command":
