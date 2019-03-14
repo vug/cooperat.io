@@ -32,6 +32,18 @@ def game_loop(game_state):
     delta_t = ts_curr - ts_prev
 
     update_positions(game_state, delta_t)
+    touched_players_ids = detect_collisions(game_state)
+    touched_players = [game_state.units[ix] for ix in touched_players_ids]
+    if touched_players_ids:
+        logging.info(
+            (
+                f"tick: {game_state.tick_no}."
+                f"touched by ghost: {[p['nickname'] for p in touched_players]}"
+            )
+        )
+    for u in touched_players:
+        u["type"] = "ghost"
+        u["is_marked"] = False
 
     game_state.ts = datetime.datetime.utcnow().timestamp()
     game_state.tick_no += 1
@@ -49,6 +61,18 @@ def update_positions(game_state, delta_t):
             u["dir"] = (u["dir"] + random.random() * 0.4 - 0.2) % (2.0 * math.pi)
 
 
+def detect_collisions(game_state):
+    """Get the list of players that are touched by a ghost."""
+    player_units = [u for u in game_state.units.values() if u["type"] == "player"]
+    ghost_units = [u for u in game_state.units.values() if u["type"] == "ghost"]
+    touched_players = []
+    for p in player_units:
+        for g in ghost_units:
+            if p["x"] - 1 < g["x"] < p["x"] + 1 and p["y"] - 1 < g["y"] < p["y"] + 1:
+                touched_players.append(p)
+    return [u["id"] for u in touched_players]
+
+
 async def producer_handler(ws, path, game_state):
     try:
         while True:
@@ -62,13 +86,13 @@ async def producer_handler(ws, path, game_state):
                 is_unit_ghost = u["type"] == "ghost"
                 if is_client_warrior and is_unit_ghost and not u["is_marked"]:
                     continue
-                d = {k: u[k] for k in ["type", "x", "y", "dir"]}
-                if is_unit_ghost:
-                    d.update({k: u[k] for k in ["is_marked"]})
-                if u["type"] == "player":
-                    d.update({k: u[k] for k in ["nickname", "class"]})
+                d = {
+                    k: u[k]
+                    for k in ["type", "x", "y", "dir", "nickname", "class", "is_marked"]
+                    if k in u
+                }
                 is_unit_of_client = uid == client_uid
-                if is_unit_of_client:
+                if u["type"] == "player" and is_unit_of_client:
                     d["type"] = "me"
                 message["units"].append(d)
 
@@ -78,6 +102,10 @@ async def producer_handler(ws, path, game_state):
         logging.info(f"User {ws.remote_address} has left.")
     finally:
         uid = connectedSockets[ws]
+        client_unit = game_state.units[uid]
+        if client_unit["type"] == "ghost":
+            logging.info(f"Keeping {ws.remote_address}'s unit. id: {uid}")
+        else:
         logging.info(f"Removing {ws.remote_address}'s unit. id: {uid}")
         game_state.units.pop(uid, None)
         connectedSockets.pop(ws, None)
@@ -88,6 +116,8 @@ async def consumer_handler(ws, path, game_state):
         logging.info(f"{ws.remote_address}: {msg_str}")
         msg = json.loads(msg_str)
         client_unit = game_state.units[connectedSockets[ws]]
+        if client_unit["type"] == "ghost":
+            continue
         msg_type = msg["type"]
 
         if msg_type == "command":
