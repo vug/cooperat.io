@@ -102,6 +102,10 @@ async def producer_handler(ws, path, game_state):
         logging.info(f"User {ws.remote_address} has left.")
     finally:
         uid = connectedSockets[ws]
+        client_unit = game_state.units[uid]
+        if client_unit["type"] == "ghost":
+            logging.info(f"Keeping {ws.remote_address}'s unit. id: {uid}")
+        else:
         logging.info(f"Removing {ws.remote_address}'s unit. id: {uid}")
         game_state.units.pop(uid, None)
         connectedSockets.pop(ws, None)
