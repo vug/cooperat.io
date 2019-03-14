@@ -49,6 +49,18 @@ def update_positions(game_state, delta_t):
             u["dir"] = (u["dir"] + random.random() * 0.4 - 0.2) % (2.0 * math.pi)
 
 
+def detect_collisions(game_state):
+    """Get the list of players that are touched by a ghost."""
+    player_units = [u for u in game_state.units.values() if u["type"] == "player"]
+    ghost_units = [u for u in game_state.units.values() if u["type"] == "ghost"]
+    touched_players = []
+    for p in player_units:
+        for g in ghost_units:
+            if p["x"] - 1 < g["x"] < p["x"] + 1 and p["y"] - 1 < g["y"] < p["y"] + 1:
+                touched_players.append(p)
+    return [u["id"] for u in touched_players]
+
+
 async def producer_handler(ws, path, game_state):
     try:
         while True:
