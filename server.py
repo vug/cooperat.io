@@ -32,6 +32,18 @@ def game_loop(game_state):
     delta_t = ts_curr - ts_prev
 
     update_positions(game_state, delta_t)
+    touched_players_ids = detect_collisions(game_state)
+    touched_players = [game_state.units[ix] for ix in touched_players_ids]
+    if touched_players_ids:
+        logging.info(
+            (
+                f"tick: {game_state.tick_no}."
+                f"touched by ghost: {[p['nickname'] for p in touched_players]}"
+            )
+        )
+    for u in touched_players:
+        u["type"] = "ghost"
+        u["is_marked"] = False
 
     game_state.ts = datetime.datetime.utcnow().timestamp()
     game_state.tick_no += 1
@@ -74,13 +86,13 @@ async def producer_handler(ws, path, game_state):
                 is_unit_ghost = u["type"] == "ghost"
                 if is_client_warrior and is_unit_ghost and not u["is_marked"]:
                     continue
-                d = {k: u[k] for k in ["type", "x", "y", "dir"]}
-                if is_unit_ghost:
-                    d.update({k: u[k] for k in ["is_marked"]})
-                if u["type"] == "player":
-                    d.update({k: u[k] for k in ["nickname", "class"]})
+                d = {
+                    k: u[k]
+                    for k in ["type", "x", "y", "dir", "nickname", "class", "is_marked"]
+                    if k in u
+                }
                 is_unit_of_client = uid == client_uid
-                if is_unit_of_client:
+                if u["type"] == "player" and is_unit_of_client:
                     d["type"] = "me"
                 message["units"].append(d)
 
