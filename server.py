@@ -19,7 +19,7 @@ class GameState(object):
         self.num_units_created = 0
         self.world_size = 30
         self.player_interaction_radius = 3.0
-        self.sight_range = 6
+        self.sight_range = 10
 
 
 def game_loop(game_state):
@@ -99,6 +99,8 @@ async def producer_handler(ws, path, game_state):
                     for k in ["type", "x", "y", "dir", "nickname", "class", "is_marked"]
                     if k in u
                 }
+                d["x"] -= client_unit["x"]
+                d["y"] -= client_unit["y"]
                 if u["type"] == "player" and is_client:
                     d["type"] = "me"
                 message["units"].append(d)

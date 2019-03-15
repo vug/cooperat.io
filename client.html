@@ -149,8 +149,8 @@
 
             
             for (var u of units) {
-                x = u["x"] * scale;
-                y = u["y"] * scale;                
+                x = u["x"] * scale + 500 / 2;
+                y = u["y"] * scale + 500 / 2;                
                 if (u['type'] === 'ghost') {
                     ctx.fillStyle = 'rgba(255, 0, 0, 0.25)';
                     if (u['is_marked']) {
