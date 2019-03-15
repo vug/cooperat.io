@@ -59,14 +59,26 @@
     <div id="game-screen" style="display: none;">
         <canvas id="canvas" width="500" height="500">Game Arena</canvas>
         <br>
-        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up</button>
+        <table>
+            <tr>
+                <td></td>
+                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up</button></td> 
+                <td></td>
+            </tr>
+            <tr>
+                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left</button></td>
+                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "stop"}))'>stop</button></td> 
+                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right</button></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down</button></td> 
+                <td></td>
+            </tr>            
+        </table>        
         <br>
-        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left</button>
-        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right</button>  
         <button id="mark-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "mark"}))'>mark</button>
         <button id="attack-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "attack"}))'>attack</button>
-        <br>
-        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down</button>
         <ul id="debug-list"></ul>        
     </div>
     <script>
@@ -105,8 +117,9 @@
             };
             ws.onmessage = function(event) {
                 var msg = JSON.parse(event.data);
-                GAME_INFO['world_size'] = msg['world_size'];
-                GAME_INFO['interaction_radius'] = msg['interaction_radius'];
+                for (var k of ['world_size', 'interaction_radius', 'sight_range']) {
+                    GAME_INFO[k] = msg[k];
+                }
                 GAME_INFO['player_class'] = cls;
                 ctx.font = "" + 500 / GAME_INFO['world_size'] + "px Arial";
                 console.log("first message received ", msg);
@@ -114,30 +127,36 @@
             }
         }
 
-        function render(units) {
-            var scale = 500 / GAME_INFO['world_size'];
+        function render(units, cx, cy) {
+            var scale = 500 / (GAME_INFO['sight_range'] * 2);
             ctx.fillStyle = "rgb(200, 200, 200)";
             ctx.fillRect(0, 0, 500, 500);
+
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = "rgb(255, 0, 255)";
+            ctx.strokeRect(-cx * scale + 500 / 2, -cy * scale + 500 / 2, GAME_INFO['world_size'] * scale, GAME_INFO['world_size'] * scale);
 
             ctx.lineWidth = 2;
             ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
             var gridSize = 5;
-            for (var k = 0; k < GAME_INFO['world_size']; k += gridSize) {
+            for (var k = -gridSize; k < GAME_INFO['sight_range'] * 2 + gridSize; k += gridSize) {
                 var deltaL = k * scale;
+                deltaX = deltaL - (cx % gridSize) * scale;
+                deltaY = deltaL - (cy % gridSize) * scale;
                 ctx.beginPath();
-                ctx.moveTo(deltaL, 0);
-                ctx.lineTo(deltaL, 500);
+                ctx.moveTo(deltaX, 0);
+                ctx.lineTo(deltaX, 500);
                 ctx.stroke();
                 ctx.beginPath();
-                ctx.moveTo(0, deltaL);
-                ctx.lineTo(500, deltaL);
+                ctx.moveTo(0, deltaY);
+                ctx.lineTo(500, deltaY);
                 ctx.stroke();                
             }            
 
             
-            for (var u of units) {
-                x = u["x"] * scale;
-                y = u["y"] * scale;                
+            for (var u of units) {                 
+                x = u["x"] * scale + 500 / 2;
+                y = u["y"] * scale + 500 / 2;                
                 if (u['type'] === 'ghost') {
                     ctx.fillStyle = 'rgba(255, 0, 0, 0.25)';
                     if (u['is_marked']) {
@@ -154,6 +173,10 @@
                     var r = GAME_INFO['interaction_radius'] * scale;
                     ctx.arc(x, y, r, 0, 2 * Math.PI);
                     ctx.stroke();
+                    // TODO: Temporary indication of camera view.
+                    ctx.strokeStyle = 'black';
+                    var sight = GAME_INFO['sight_range'] * scale;
+                    ctx.strokeRect(x - sight, y - sight, 2 * sight, 2 * sight);
                 }
                 else if (u['type'] === 'player' && u['class'] === 'warrior') {
                     ctx.fillStyle = 'orange';
@@ -176,7 +199,9 @@
             ws.onmessage = function(event) {
                 var msg = JSON.parse(event.data);
                 var units = msg['units'];
-                render(units);
+                var cx = msg['cx'];
+                var cy = msg['cy'];
+                render(units, cx, cy);
 
                 var debugList = document.getElementById('debug-list');
                 var item = document.createElement('li');

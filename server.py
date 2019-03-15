@@ -19,6 +19,7 @@ class GameState(object):
         self.num_units_created = 0
         self.world_size = 30
         self.player_interaction_radius = 3.0
+        self.sight_range = 10
 
 
 def game_loop(game_state):
@@ -51,12 +52,16 @@ def game_loop(game_state):
 
 def update_positions(game_state, delta_t):
     for id, u in game_state.units.items():
-        u["x"] = (
-            u["x"] + math.cos(u["dir"]) * u["speed"] * delta_t
-        ) % game_state.world_size
-        u["y"] = (
-            u["y"] - math.sin(u["dir"]) * u["speed"] * delta_t
-        ) % game_state.world_size
+        u["x"] = u["x"] + math.cos(u["dir"]) * u["speed"] * delta_t
+        if u["x"] < 0:
+            u["x"] = 0
+        if u["x"] > game_state.world_size:
+            u["x"] = game_state.world_size
+        u["y"] = u["y"] - math.sin(u["dir"]) * u["speed"] * delta_t
+        if u["y"] < 0:
+            u["y"] = 0
+        if u["y"] > game_state.world_size:
+            u["y"] = game_state.world_size
         if u["type"] == "ghost":
             u["dir"] = (u["dir"] + random.random() * 0.4 - 0.2) % (2.0 * math.pi)
 
@@ -81,18 +86,28 @@ async def producer_handler(ws, path, game_state):
             message["units"] = []
             client_uid = connectedSockets[ws]
             client_unit = game_state.units[client_uid]
+            message["cx"] = client_unit["x"]
+            message["cy"] = client_unit["y"]            
             is_client_warrior = client_unit["class"] == "warrior"
             for uid, u in game_state.units.items():
-                is_unit_ghost = u["type"] == "ghost"
-                if is_client_warrior and is_unit_ghost and not u["is_marked"]:
+                is_client = uid == client_uid
+                is_ghost = u["type"] == "ghost"
+                is_in_sight = (
+                    abs(u["x"] - client_unit["x"]) < game_state.sight_range + 1.0
+                    and abs(u["y"] - client_unit["y"]) < game_state.sight_range + 1.0
+                )
+                if not is_client and not is_in_sight:
+                    continue
+                if is_client_warrior and is_ghost and not u["is_marked"]:
                     continue
                 d = {
                     k: u[k]
                     for k in ["type", "x", "y", "dir", "nickname", "class", "is_marked"]
                     if k in u
                 }
-                is_unit_of_client = uid == client_uid
-                if u["type"] == "player" and is_unit_of_client:
+                d["x"] -= client_unit["x"]
+                d["y"] -= client_unit["y"]
+                if u["type"] == "player" and is_client:
                     d["type"] = "me"
                 message["units"].append(d)
 
@@ -106,8 +121,8 @@ async def producer_handler(ws, path, game_state):
         if client_unit["type"] == "ghost":
             logging.info(f"Keeping {ws.remote_address}'s unit. id: {uid}")
         else:
-        logging.info(f"Removing {ws.remote_address}'s unit. id: {uid}")
-        game_state.units.pop(uid, None)
+            logging.info(f"Removing {ws.remote_address}'s unit. id: {uid}")
+            game_state.units.pop(uid, None)
         connectedSockets.pop(ws, None)
 
 
@@ -124,12 +139,18 @@ async def consumer_handler(ws, path, game_state):
             command = msg["command"]
             if command == "up":
                 client_unit["dir"] = math.pi / 2
+                client_unit["speed"] = 3.0
             if command == "down":
                 client_unit["dir"] = -math.pi / 2
+                client_unit["speed"] = 3.0
             if command == "left":
                 client_unit["dir"] = math.pi
+                client_unit["speed"] = 3.0
             if command == "right":
                 client_unit["dir"] = 0
+                client_unit["speed"] = 3.0
+            if command == "stop":
+                client_unit["speed"] = 0.0
             if command == "mark":
                 ghost_id, distance = get_target(game_state, client_unit)
                 ghost = game_state.units.get(ghost_id, None)
@@ -195,6 +216,7 @@ async def handshake(ws, game_state):
         "type": "init",
         "world_size": game_state.world_size,
         "interaction_radius": game_state.player_interaction_radius,
+        "sight_range": game_state.sight_range,
     }
     await ws.send(json.dumps(msg))
 
@@ -204,7 +226,7 @@ async def handshake(ws, game_state):
         "type": "player",
         "x": random.random() * game_state.world_size,
         "y": random.random() * game_state.world_size,
-        "speed": 3.0,
+        "speed": 0.0,
         "dir": 0,
         "nickname": nickname,
         "class": unit_class,
