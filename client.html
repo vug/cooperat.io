@@ -59,14 +59,26 @@
     <div id="game-screen" style="display: none;">
         <canvas id="canvas" width="500" height="500">Game Arena</canvas>
         <br>
-        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up</button>
+        <table>
+            <tr>
+                <td></td>
+                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up</button></td> 
+                <td></td>
+            </tr>
+            <tr>
+                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left</button></td>
+                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "stop"}))'>stop</button></td> 
+                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right</button></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down</button></td> 
+                <td></td>
+            </tr>            
+        </table>        
         <br>
-        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left</button>
-        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right</button>  
         <button id="mark-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "mark"}))'>mark</button>
         <button id="attack-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "attack"}))'>attack</button>
-        <br>
-        <button onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down</button>
         <ul id="debug-list"></ul>        
     </div>
     <script>

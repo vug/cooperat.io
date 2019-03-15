@@ -131,12 +131,18 @@ async def consumer_handler(ws, path, game_state):
             command = msg["command"]
             if command == "up":
                 client_unit["dir"] = math.pi / 2
+                client_unit["speed"] = 1.5
             if command == "down":
                 client_unit["dir"] = -math.pi / 2
+                client_unit["speed"] = 1.5
             if command == "left":
                 client_unit["dir"] = math.pi
+                client_unit["speed"] = 1.5
             if command == "right":
                 client_unit["dir"] = 0
+                client_unit["speed"] = 1.5
+            if command == "stop":
+                client_unit["speed"] = 0.0
             if command == "mark":
                 ghost_id, distance = get_target(game_state, client_unit)
                 ghost = game_state.units.get(ghost_id, None)
