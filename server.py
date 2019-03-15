@@ -19,6 +19,7 @@ class GameState(object):
         self.num_units_created = 0
         self.world_size = 30
         self.player_interaction_radius = 3.0
+        self.sight_range = 5
 
 
 def game_loop(game_state):
@@ -83,16 +84,22 @@ async def producer_handler(ws, path, game_state):
             client_unit = game_state.units[client_uid]
             is_client_warrior = client_unit["class"] == "warrior"
             for uid, u in game_state.units.items():
-                is_unit_ghost = u["type"] == "ghost"
-                if is_client_warrior and is_unit_ghost and not u["is_marked"]:
+                is_client = uid == client_uid
+                is_ghost = u["type"] == "ghost"
+                is_in_sight = (
+                    abs(u["x"] - client_unit["x"]) < game_state.sight_range + 1.0
+                    and abs(u["y"] - client_unit["y"]) < game_state.sight_range + 1.0
+                )
+                if not is_client and not is_in_sight:
+                    continue
+                if is_client_warrior and is_ghost and not u["is_marked"]:
                     continue
                 d = {
                     k: u[k]
                     for k in ["type", "x", "y", "dir", "nickname", "class", "is_marked"]
                     if k in u
                 }
-                is_unit_of_client = uid == client_uid
-                if u["type"] == "player" and is_unit_of_client:
+                if u["type"] == "player" and is_client:
                     d["type"] = "me"
                 message["units"].append(d)
 
@@ -106,8 +113,8 @@ async def producer_handler(ws, path, game_state):
         if client_unit["type"] == "ghost":
             logging.info(f"Keeping {ws.remote_address}'s unit. id: {uid}")
         else:
-        logging.info(f"Removing {ws.remote_address}'s unit. id: {uid}")
-        game_state.units.pop(uid, None)
+            logging.info(f"Removing {ws.remote_address}'s unit. id: {uid}")
+            game_state.units.pop(uid, None)
         connectedSockets.pop(ws, None)
 
 
