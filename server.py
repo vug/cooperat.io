@@ -133,16 +133,16 @@ async def consumer_handler(ws, path, game_state):
             command = msg["command"]
             if command == "up":
                 client_unit["dir"] = math.pi / 2
-                client_unit["speed"] = 1.5
+                client_unit["speed"] = 3.0
             if command == "down":
                 client_unit["dir"] = -math.pi / 2
-                client_unit["speed"] = 1.5
+                client_unit["speed"] = 3.0
             if command == "left":
                 client_unit["dir"] = math.pi
-                client_unit["speed"] = 1.5
+                client_unit["speed"] = 3.0
             if command == "right":
                 client_unit["dir"] = 0
-                client_unit["speed"] = 1.5
+                client_unit["speed"] = 3.0
             if command == "stop":
                 client_unit["speed"] = 0.0
             if command == "mark":
@@ -220,7 +220,7 @@ async def handshake(ws, game_state):
         "type": "player",
         "x": random.random() * game_state.world_size,
         "y": random.random() * game_state.world_size,
-        "speed": 3.0,
+        "speed": 0.0,
         "dir": 0,
         "nickname": nickname,
         "class": unit_class,
