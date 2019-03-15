@@ -132,6 +132,10 @@
             ctx.fillStyle = "rgb(200, 200, 200)";
             ctx.fillRect(0, 0, 500, 500);
 
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = "rgb(255, 0, 255)";
+            ctx.strokeRect(-cx * scale + 500 / 2, -cy * scale + 500 / 2, GAME_INFO['world_size'] * scale, GAME_INFO['world_size'] * scale);
+
             ctx.lineWidth = 2;
             ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
             var gridSize = 5;
