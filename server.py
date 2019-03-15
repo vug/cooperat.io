@@ -52,12 +52,16 @@ def game_loop(game_state):
 
 def update_positions(game_state, delta_t):
     for id, u in game_state.units.items():
-        u["x"] = (
-            u["x"] + math.cos(u["dir"]) * u["speed"] * delta_t
-        ) % game_state.world_size
-        u["y"] = (
-            u["y"] - math.sin(u["dir"]) * u["speed"] * delta_t
-        ) % game_state.world_size
+        u["x"] = u["x"] + math.cos(u["dir"]) * u["speed"] * delta_t
+        if u["x"] < 0:
+            u["x"] = 0
+        if u["x"] > game_state.world_size:
+            u["x"] = game_state.world_size
+        u["y"] = u["y"] - math.sin(u["dir"]) * u["speed"] * delta_t
+        if u["y"] < 0:
+            u["y"] = 0
+        if u["y"] > game_state.world_size:
+            u["y"] = game_state.world_size
         if u["type"] == "ghost":
             u["dir"] = (u["dir"] + random.random() * 0.4 - 0.2) % (2.0 * math.pi)
 
