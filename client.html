@@ -127,7 +127,7 @@
             }
         }
 
-        function render(units) {
+        function render(units, cx, cy) {
             var scale = 500 / GAME_INFO['world_size'];
             ctx.fillStyle = "rgb(200, 200, 200)";
             ctx.fillRect(0, 0, 500, 500);
@@ -135,20 +135,22 @@
             ctx.lineWidth = 2;
             ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
             var gridSize = 5;
-            for (var k = 0; k < GAME_INFO['world_size']; k += gridSize) {
+            for (var k = -gridSize; k < GAME_INFO['world_size'] + gridSize; k += gridSize) {
                 var deltaL = k * scale;
+                deltaX = deltaL - (cx % gridSize) * scale;
+                deltaY = deltaL - (cy % gridSize) * scale;
                 ctx.beginPath();
-                ctx.moveTo(deltaL, 0);
-                ctx.lineTo(deltaL, 500);
+                ctx.moveTo(deltaX, 0);
+                ctx.lineTo(deltaX, 500);
                 ctx.stroke();
                 ctx.beginPath();
-                ctx.moveTo(0, deltaL);
-                ctx.lineTo(500, deltaL);
+                ctx.moveTo(0, deltaY);
+                ctx.lineTo(500, deltaY);
                 ctx.stroke();                
             }            
 
             
-            for (var u of units) {
+            for (var u of units) {                 
                 x = u["x"] * scale + 500 / 2;
                 y = u["y"] * scale + 500 / 2;                
                 if (u['type'] === 'ghost') {
@@ -195,6 +197,7 @@
                 var units = msg['units'];
                 var cx = msg['cx'];
                 var cy = msg['cy'];
+                render(units, cx, cy);
 
                 var debugList = document.getElementById('debug-list');
                 var item = document.createElement('li');
