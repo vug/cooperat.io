@@ -105,8 +105,9 @@
             };
             ws.onmessage = function(event) {
                 var msg = JSON.parse(event.data);
-                GAME_INFO['world_size'] = msg['world_size'];
-                GAME_INFO['interaction_radius'] = msg['interaction_radius'];
+                for (var k of ['world_size', 'interaction_radius', 'sight_range']) {
+                    GAME_INFO[k] = msg[k];
+                }
                 GAME_INFO['player_class'] = cls;
                 ctx.font = "" + 500 / GAME_INFO['world_size'] + "px Arial";
                 console.log("first message received ", msg);
@@ -154,6 +155,10 @@
                     var r = GAME_INFO['interaction_radius'] * scale;
                     ctx.arc(x, y, r, 0, 2 * Math.PI);
                     ctx.stroke();
+                    // TODO: Temporary indication of camera view.
+                    ctx.strokeStyle = 'black';
+                    var sight = GAME_INFO['sight_range'] * scale;
+                    ctx.strokeRect(x - sight, y - sight, 2 * sight, 2 * sight);
                 }
                 else if (u['type'] === 'player' && u['class'] === 'warrior') {
                     ctx.fillStyle = 'orange';

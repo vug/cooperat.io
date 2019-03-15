@@ -19,7 +19,7 @@ class GameState(object):
         self.num_units_created = 0
         self.world_size = 30
         self.player_interaction_radius = 3.0
-        self.sight_range = 5
+        self.sight_range = 6
 
 
 def game_loop(game_state):
@@ -202,6 +202,7 @@ async def handshake(ws, game_state):
         "type": "init",
         "world_size": game_state.world_size,
         "interaction_radius": game_state.player_interaction_radius,
+        "sight_range": game_state.sight_range,
     }
     await ws.send(json.dumps(msg))
 
