@@ -82,6 +82,8 @@ async def producer_handler(ws, path, game_state):
             message["units"] = []
             client_uid = connectedSockets[ws]
             client_unit = game_state.units[client_uid]
+            message["cx"] = client_unit["x"]
+            message["cy"] = client_unit["y"]            
             is_client_warrior = client_unit["class"] == "warrior"
             for uid, u in game_state.units.items():
                 is_client = uid == client_uid

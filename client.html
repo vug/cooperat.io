@@ -193,7 +193,8 @@
             ws.onmessage = function(event) {
                 var msg = JSON.parse(event.data);
                 var units = msg['units'];
-                render(units);
+                var cx = msg['cx'];
+                var cy = msg['cy'];
 
                 var debugList = document.getElementById('debug-list');
                 var item = document.createElement('li');
