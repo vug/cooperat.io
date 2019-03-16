@@ -41,7 +41,7 @@
         #chat-box input[type="text"], 
         #chat-box textarea {
             width: 100%;
-            font-size: 12px;
+            font-size: 14x;
             font-family: monospace;
             background: transparent;
             resize: none;
@@ -131,7 +131,7 @@
         </table>        
         <ul id="debug-list"></ul>       
         <div id="chat-box">
-            <input type="text" placeholder="Enter chat message to broadcast.">
+            <input id="chat-input" type="text" placeholder="Enter chat message to broadcast.">
             <textarea id="chat-messages" readonly cols="80" rows="10" wrap="soft"></textarea>
         </div>  
     </div>       
@@ -143,6 +143,7 @@
         const welcomeSpinner = document.getElementById('welcome-spinner');
         const gameScreen = document.getElementById('game-screen');
         const nickNameInput = document.getElementById('nickname-input');
+        const chatInput = document.getElementById('chat-input');
         var ws = null;
         var actionCommand = null;
         var GAME_INFO = {};
@@ -285,7 +286,17 @@
                 }
             };
 
-            window.onkeydown = function(event) {
+            window.onkeydown = handleCommandKeyDown;
+
+            chatInput.onfocus = function() {
+                window.onkeydown = null;
+            };
+            chatInput.onblur = function() {
+                window.onkeydown = handleCommandKeyDown;
+            }
+        }
+
+        function handleCommandKeyDown(event) {
                 if (event.repeat) { return; }
                 var command = null;
                 switch (event.keyCode) {
@@ -301,7 +312,6 @@
                 );
                 ws.send(msg);
             };
-        }
 
     </script>
 </body>
