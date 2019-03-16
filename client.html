@@ -84,29 +84,29 @@
     <div id="game-screen">
         <canvas id="canvas">Game Arena</canvas>
         <table id="buttons">
-                <tr>
-                    <td></td>
-                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up (W)</button></td> 
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left (A)</button></td>
-                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "stop"}))'>stop</button></td> 
-                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right (D)</button></td>
-                    <td>
-                        <button class="command" id="mark-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "mark"}))'>mark (SPACE)</button>
-                        <button class="command" id="attack-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "attack"}))'>attack (SPACE)</button>                
-                    </td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down (S)</button></td> 
-                    <td></td>
-                    <td></td>
-                </tr>            
-            </table>        
-            <ul id="debug-list"></ul>         
+            <tr>
+                <td></td>
+                <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up (W)</button></td> 
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left (A)</button></td>
+                <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "stop"}))'>stop</button></td> 
+                <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right (D)</button></td>
+                <td>
+                    <button class="command" id="mark-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "mark"}))'>mark (SPACE)</button>
+                    <button class="command" id="attack-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "attack"}))'>attack (SPACE)</button>                
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down (S)</button></td> 
+                <td></td>
+                <td></td>
+            </tr>            
+        </table>        
+        <ul id="debug-list"></ul>         
     </div>       
     <script>
         const canvas = document.getElementById('canvas');
