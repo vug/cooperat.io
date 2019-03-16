@@ -86,22 +86,22 @@
         <table id="buttons">
                 <tr>
                     <td></td>
-                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up</button></td> 
+                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up (W)</button></td> 
                     <td></td>
                     <td></td>
                 </tr>
                 <tr>
-                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left</button></td>
+                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left (A)</button></td>
                     <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "stop"}))'>stop</button></td> 
-                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right</button></td>
+                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right (D)</button></td>
                     <td>
-                        <button class="command" id="mark-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "mark"}))'>mark</button>
-                        <button class="command" id="attack-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "attack"}))'>attack</button>                
+                        <button class="command" id="mark-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "mark"}))'>mark (SPACE)</button>
+                        <button class="command" id="attack-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "attack"}))'>attack (SPACE)</button>                
                     </td>
                 </tr>
                 <tr>
                     <td></td>
-                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down</button></td> 
+                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down (S)</button></td> 
                     <td></td>
                     <td></td>
                 </tr>            
@@ -117,20 +117,24 @@
         const gameScreen = document.getElementById('game-screen');
         const nickNameInput = document.getElementById('nickname-input');
         var ws = null;
+        var actionCommand = null;
         var GAME_INFO = {};
 
         window.onload = window.onresize = function() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         }
+        window.onkeydown = null;
 
         function chooseClass(cls) {
             playerClass = cls;
             if (cls === "warrior") {
                 document.getElementById("attack-button").style.display = "inline";
+                actionCommand = 'attack';
             }
             else if (cls === "psychic") {
                 document.getElementById("mark-button").style.display = "inline";
+                actionCommand = 'mark';
             }
             var nickname = nickNameInput.value;
             if (nickname === "") {
@@ -252,6 +256,23 @@
                 if (debugList.children.length > 5) {  // Keep 5 most recent items
                     debugList.removeChild(debugList.lastChild);
                 }
+            };
+
+            window.onkeydown = function(event) {
+                if (event.repeat) { return; }
+                var command = null;
+                switch (event.keyCode) {
+                    case 65: command = 'left'; break;
+                    case 87: command = 'up'; break;
+                    case 68: command = 'right'; break;
+                    case 83: command = 'down'; break;
+                    case 32: command = actionCommand; break;
+                    default: return;
+                }
+                var msg = JSON.stringify(
+                    {"type": "command", "command": command}
+                );
+                ws.send(msg);
             };
         }
 
