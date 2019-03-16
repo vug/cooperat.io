@@ -31,6 +31,27 @@
             left: 10px;
             font-size: 10px;
         }
+        #chat-box {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50%;
+        }
+        #chat-box input[type="text"], 
+        #chat-box textarea {
+            width: 100%;
+            font-size: 12px;
+            font-family: monospace;
+            background: transparent;
+            resize: none;
+            padding: 0px 0px;
+            padding-left: 1px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.3);
+            border-width: 1px;            
+            box-sizing: border-box;            
+        }
         #welcome-screen {
             position: fixed;
             background-color:#3498db;
@@ -51,7 +72,8 @@
             transform: translate(-50%,-50%);
             -ms-transform: translate(-50%,-50%);
         }
-        #welcome-choices>button,input {
+        #welcome-choices button,
+        #welcome-choices input[type="text"] {
             font-size: 40px;
         }
         #welcome-spinner {
@@ -107,7 +129,11 @@
                 <td></td>
             </tr>            
         </table>        
-        <ul id="debug-list"></ul>         
+        <ul id="debug-list"></ul>       
+        <div id="chat-box">
+            <input type="text" placeholder="Enter chat message to broadcast.">
+            <textarea id="chat-messages" readonly cols="80" rows="10" wrap="soft"></textarea>
+        </div>  
     </div>       
     <script>
         const canvas = document.getElementById('canvas');
