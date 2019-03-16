@@ -3,8 +3,33 @@
 <head>
     <meta charset="utf-8">
     <title>WebSocket Demo</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <style>
+        body {
+            margin: 0px;
+            padding: 0px;
+            overflow: hidden;
+        }
+        #game-screen {
+            display: none; 
+            background-color: red; 
+            width: 100%; 
+            height: 100%;            
+        }
+        #buttons {
+            position: fixed;
+            bottom: 100px;
+            left: 100px;
+        }
+        button.command {
+            width: 50px;
+            height: 50px;
+        }
+        #debug-list {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+        }
         #welcome-screen {
             position: fixed;
             background-color:#3498db;
@@ -56,31 +81,33 @@
             <div id="welcome-spinner" style="display: none;"></div>
         </div>
     </div>
-    <div id="game-screen" style="display: none;">
-        <canvas id="canvas" width="500" height="500">Game Arena</canvas>
-        <br>
-        <table>
-            <tr>
-                <td></td>
-                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up</button></td> 
-                <td></td>
-            </tr>
-            <tr>
-                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left</button></td>
-                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "stop"}))'>stop</button></td> 
-                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right</button></td>
-            </tr>
-            <tr>
-                <td></td>
-                <td><button onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down</button></td> 
-                <td></td>
-            </tr>            
-        </table>        
-        <br>
-        <button id="mark-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "mark"}))'>mark</button>
-        <button id="attack-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "attack"}))'>attack</button>
-        <ul id="debug-list"></ul>        
-    </div>
+    <div id="game-screen">
+        <canvas id="canvas">Game Arena</canvas>
+        <table id="buttons">
+                <tr>
+                    <td></td>
+                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up</button></td> 
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left</button></td>
+                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "stop"}))'>stop</button></td> 
+                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right</button></td>
+                    <td>
+                        <button class="command" id="mark-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "mark"}))'>mark</button>
+                        <button class="command" id="attack-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "attack"}))'>attack</button>                
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down</button></td> 
+                    <td></td>
+                    <td></td>
+                </tr>            
+            </table>        
+            <ul id="debug-list"></ul>         
+    </div>       
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
@@ -91,6 +118,11 @@
         const nickNameInput = document.getElementById('nickname-input');
         var ws = null;
         var GAME_INFO = {};
+
+        window.onload = window.onresize = function() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
 
         function chooseClass(cls) {
             playerClass = cls;
@@ -121,21 +153,27 @@
                     GAME_INFO[k] = msg[k];
                 }
                 GAME_INFO['player_class'] = cls;
-                ctx.font = "" + 500 / GAME_INFO['world_size'] + "px Arial";
                 console.log("first message received ", msg);
                 startGameSession();
             }
         }
 
         function render(units, cx, cy) {
-            var scale = 500 / (GAME_INFO['sight_range'] * 2);
-            ctx.fillStyle = "rgb(200, 200, 200)";
-            ctx.fillRect(0, 0, 500, 500);
+            // Arrage scale so that longer canvas side matches with player's sight
+            // There will be map area with unit data that won't be shown on the shorter side direction outside of canvas
+            var shorterSide = Math.max(canvas.width, canvas.height);
+            var scale = shorterSide / (GAME_INFO['sight_range'] * 2);
 
+            // Clear canvas
+            ctx.fillStyle = "rgb(200, 200, 200)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw world borders
             ctx.lineWidth = 5;
             ctx.strokeStyle = "rgb(255, 0, 255)";
-            ctx.strokeRect(-cx * scale + 500 / 2, -cy * scale + 500 / 2, GAME_INFO['world_size'] * scale, GAME_INFO['world_size'] * scale);
+            ctx.strokeRect(-cx * scale + canvas.width / 2, -cy * scale + canvas.height / 2, GAME_INFO['world_size'] * scale, GAME_INFO['world_size'] * scale);
 
+            // Draw grid
             ctx.lineWidth = 2;
             ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
             var gridSize = 5;
@@ -145,24 +183,26 @@
                 deltaY = deltaL - (cy % gridSize) * scale;
                 ctx.beginPath();
                 ctx.moveTo(deltaX, 0);
-                ctx.lineTo(deltaX, 500);
+                ctx.lineTo(deltaX, shorterSide);
                 ctx.stroke();
                 ctx.beginPath();
                 ctx.moveTo(0, deltaY);
-                ctx.lineTo(500, deltaY);
+                ctx.lineTo(shorterSide, deltaY);
                 ctx.stroke();                
             }            
 
-            
-            for (var u of units) {                 
-                x = u["x"] * scale + 500 / 2;
-                y = u["y"] * scale + 500 / 2;                
+            // Draw units
+            for (var u of units) {
+                // translate unit coordinates to screen coordinate (shift (0, 0) to screen center)             
+                x = u["x"] * scale + canvas.width / 2;
+                y = u["y"] * scale + canvas.height / 2;
+
                 if (u['type'] === 'ghost') {
                     ctx.fillStyle = 'rgba(255, 0, 0, 0.25)';
                     if (u['is_marked']) {
                         ctx.lineWidth = 2;
                         ctx.strokeStyle = 'green';
-                        ctx.strokeRect(x - scale * 0.5, y - scale * 0.5, scale, scale);
+                        ctx.strokeRect(x - scale * 0.5, y - scale * 0.5, scale, scale);  // unitSize == 1 is assumed
                     }
                 }
                 else if (u['type'] === 'me') {
@@ -173,7 +213,7 @@
                     var r = GAME_INFO['interaction_radius'] * scale;
                     ctx.arc(x, y, r, 0, 2 * Math.PI);
                     ctx.stroke();
-                    // TODO: Temporary indication of camera view.
+                    // Debug: borders of player sight
                     ctx.strokeStyle = 'black';
                     var sight = GAME_INFO['sight_range'] * scale;
                     ctx.strokeRect(x - sight, y - sight, 2 * sight, 2 * sight);
@@ -185,6 +225,7 @@
                     ctx.fillStyle = 'green';
                 }                
                 ctx.fillRect(x - scale * 0.5, y - scale * 0.5, scale, scale);
+                ctx.font = "" + 0.5 * shorterSide / GAME_INFO['sight_range'] + "px Arial";
                 if ('nickname' in u) {
                     ctx.fillText(u['nickname'], x - scale * 0.5, y + scale * 1.5);
                 }
