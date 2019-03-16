@@ -294,6 +294,14 @@
             chatInput.onblur = function() {
                 window.onkeydown = handleCommandKeyDown;
             }
+            chatInput.onkeyup = function(event) {
+                if (event.keyCode != 13) { return; }
+                var msg = JSON.stringify(
+                    {"type": "chat", "chat": chatInput.value}
+                );
+                ws.send(msg);
+                chatInput.value = "";
+            }
         }
 
         function handleCommandKeyDown(event) {
