@@ -164,7 +164,8 @@ async def consumer_handler(ws, path, game_state):
                     ghost["is_marked"] = True
             if command == "attack":
                 ghost_id, distance = get_target(game_state, client_unit)
-                if ghost_id is not None:
+                ghost = game_state.units.get(ghost_id, None)
+                if ghost and ghost["is_marked"]:
                     game_state.units.pop(ghost_id)
         if msg_type == "chat":
             received_chat_line = msg["chat"]
