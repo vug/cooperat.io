@@ -225,6 +225,7 @@
             }            
 
             // Draw units
+            var isAlive = false;
             for (var u of units) {
                 // translate unit coordinates to screen coordinate (shift (0, 0) to screen center)             
                 x = u["x"] * scale + canvas.width / 2;
@@ -239,6 +240,7 @@
                     }
                 }
                 else if (u['type'] === 'me') {
+                    isAlive = true;
                     ctx.fillStyle = 'blue';
                     ctx.lineWidth = 1;
                     ctx.strokeStyle = GAME_INFO['player_class'] === 'warrior' ? 'orange' : 'green';
@@ -261,6 +263,17 @@
                 ctx.font = "" + 0.5 * shorterSide / GAME_INFO['sight_range'] + "px Arial";
                 if ('nickname' in u) {
                     ctx.fillText(u['nickname'], x - scale * 0.5, y + scale * 1.5);
+                }
+            }
+            if (!isAlive) {
+                var gameOverMessage = [
+                    "Unfortunately you passed away",
+                    "and turned into a ghost.",
+                    "Refresh to start again ",
+                    "or watch your ghost haunting."
+                ]
+                for (var [ix, line] of gameOverMessage.entries()) {
+                    ctx.fillText(line, 120, 100 + ix * 60);
                 }
             }
         }
