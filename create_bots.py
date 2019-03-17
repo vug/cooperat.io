@@ -27,16 +27,15 @@ if __name__ == "__main__":
     num_psychics = args.num_psychics
 
     num_bots = num_warriors + num_psychics
-    cmds = [
+    cmds_warrior = [
         f"python test_client.py --unit-class warrior --nickname warrior-{k}"
         for k in range(num_warriors)
     ]
-    cmds.extend(
-        [
-            f"python test_client.py --unit-class psychic --nickname psychic-{k}"
-            for k in range(num_psychics)
-        ]
-    )
+    cmds_psychic = [
+        f"python test_client.py --unit-class psychic --nickname psychic-{k}"
+        for k in range(num_psychics)
+    ]
+    cmds = cmds_warrior + cmds_psychic
 
     pool = ThreadPool(num_bots)
     results = pool.map(function_create_cmds, cmds)
