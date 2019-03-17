@@ -93,6 +93,19 @@
 <body>
     <div id="welcome-screen">
         <div id="welcome-container">
+            <div id="welcome-explanation" style="text-align: center; font-size: 12px;">
+                The town is under attack by sinister ghosts.<br>
+                Become a warrior or psychic to save the town.<br>
+                Warriors can fight ghosts but cannot see them by themselves.<br>
+                Psychics can see ghosts but cannot fight them by themselves.<br>
+                However, they can collaborate:<br>
+                Psychics can mark ghosts, which makes them visible to warriors.<br>
+                <br>
+                Use WASD to move around.<br>
+                SPACE to mark/attack nearest ghost that is close enough.<br>
+                TAB to go in an out of chat box.<br>
+                ENTER to send chat message.<br>
+            </div>
             <div id="welcome-choices">
                 Nickname:<br>
                 <input id="nickname-input" type="text" name="nickname">
@@ -271,7 +284,7 @@
                     "Unfortunately you passed away",
                     "and turned into a ghost.",
                     "Refresh to start again ",
-                    "or watch your ghost haunting."
+                    "or spectate your ghost's haunting."
                 ]
                 ctx.fillStyle = ghostColor;
                 for (var [ix, line] of gameOverMessage.entries()) {
