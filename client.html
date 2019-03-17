@@ -271,14 +271,16 @@
 
             ws.onmessage = function(event) {
                 var msg = JSON.parse(event.data);
-                var units = msg['units'];
-                var cx = msg['cx'];
-                var cy = msg['cy'];
+                if (msg["type"] === "game") {
+                    var gameInfo = msg["game"];
+                    var units = gameInfo['units'];
+                    var cx = gameInfo['cx'];
+                    var cy = gameInfo['cy'];
                 render(units, cx, cy);
 
                 var debugList = document.getElementById('debug-list');
                 var item = document.createElement('li');
-                content = document.createTextNode("tick no: " + msg["tick_no"] + ", ts (server): " + msg["ts"] + ", ts (client): " + Date.now() + ", lag: " + (new Date().getTime() - msg["ts"] * 1000 + new Date().getTimezoneOffset() * 60 * 1000));
+                    content = document.createTextNode("tick no: " + gameInfo["tick_no"] + ", ts (server): " + gameInfo["ts"] + ", ts (client): " + Date.now() + ", lag: " + (new Date().getTime() - gameInfo["ts"] * 1000 + new Date().getTimezoneOffset() * 60 * 1000));
                 item.appendChild(content);
                 debugList.prepend(item);
                 if (debugList.children.length > 3) {  // Keep 3 most recent items
