@@ -21,6 +21,7 @@ class GameState(object):
         self.world_size = 30
         self.player_interaction_radius = 3.0
         self.sight_range = 10
+        self.can_ghosts_touch = True
 
 
 def game_loop(game_state):
@@ -34,19 +35,8 @@ def game_loop(game_state):
     delta_t = ts_curr - ts_prev
 
     update_positions(game_state, delta_t)
-    touched_players_ids = detect_collisions(game_state)
-    touched_players = [game_state.units[ix] for ix in touched_players_ids]
-    if touched_players_ids:
-        logger.info(
-            (
-                f"tick: {game_state.tick_no}."
-                f"touched by ghost: {[p['nickname'] for p in touched_players]}"
-            )
-        )
-    for u in touched_players:
-        u["type"] = "ghost"
-        u["speed"] = 1.5
-        u["is_marked"] = False
+    if game_state.can_ghosts_touch:
+        detect_ghost_touches(game_state)
 
     game_state.ts = datetime.datetime.utcnow().timestamp()
     game_state.tick_no += 1
@@ -66,6 +56,22 @@ def update_positions(game_state, delta_t):
             u["y"] = game_state.world_size
         if u["type"] == "ghost":
             u["dir"] = (u["dir"] + random.random() * 0.4 - 0.2) % (2.0 * math.pi)
+
+
+def detect_ghost_touches(game_state):
+    touched_players_ids = detect_collisions(game_state)
+    touched_players = [game_state.units[ix] for ix in touched_players_ids]
+    if touched_players_ids:
+        logger.info(
+            (
+                f"tick: {game_state.tick_no}."
+                f"touched by ghost: {[p['nickname'] for p in touched_players]}"
+            )
+        )
+    for u in touched_players:
+        u["type"] = "ghost"
+        u["speed"] = 1.5
+        u["is_marked"] = False
 
 
 def detect_collisions(game_state):
