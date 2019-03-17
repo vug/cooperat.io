@@ -95,11 +95,11 @@
         <div id="welcome-container">
             <div id="welcome-explanation" style="text-align: center; font-size: 12px;">
                 The town is under attack by sinister ghosts.<br>
-                Become a warrior or psychic to save the town.<br>
+                Become a warrior or sensor to save the town.<br>
                 Warriors can fight ghosts but cannot see them by themselves.<br>
-                Psychics can see ghosts but cannot fight them by themselves.<br>
+                Sensors can see ghosts but cannot fight them by themselves.<br>
                 However, they can collaborate:<br>
-                Psychics can mark ghosts, which makes them visible to warriors.<br>
+                Sensors can mark ghosts, which makes them visible to warriors.<br>
                 <br>
                 Use WASD to move around.<br>
                 SPACE to mark/attack nearest ghost that is close enough.<br>
@@ -112,7 +112,7 @@
                 <br>
                 Choose Class:<br>
                 <button onclick="chooseClass('warrior');">Warrior</button> 
-                <button onclick="chooseClass('psychic');">Psychic</button>                
+                <button onclick="chooseClass('sensor');">Sensor</button>                
             </div>
             <div id="welcome-spinner" style="display: none;"></div>
         </div>
@@ -174,7 +174,7 @@
                 document.getElementById("attack-button").style.display = "inline";
                 actionCommand = 'attack';
             }
-            else if (cls === "psychic") {
+            else if (cls === "sensor") {
                 document.getElementById("mark-button").style.display = "inline";
                 actionCommand = 'mark';
             }
@@ -270,7 +270,7 @@
                 else if (u['type'] === 'player' && u['class'] === 'warrior') {
                     ctx.fillStyle = 'orange';
                 }
-                else if (u['type'] === 'player' && u['class'] === 'psychic') {
+                else if (u['type'] === 'player' && u['class'] === 'sensor') {
                     ctx.fillStyle = 'green';
                 }                
                 ctx.fillRect(x - scale * 0.5, y - scale * 0.5, scale, scale);
