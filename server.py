@@ -160,6 +160,11 @@ async def consumer_handler(ws, path, game_state):
                 ghost_id, distance = get_target(game_state, client_unit)
                 if ghost_id is not None:
                     game_state.units.pop(ghost_id)
+        if msg_type == "chat":
+            received_chat_line = msg["chat"]
+            broadcast_message = f'{client_unit["nickname"]}: {received_chat_line}'
+            d = {"type": "chat", "chat": broadcast_message}
+            await asyncio.wait([s.send(json.dumps(d)) for s in connectedSockets])
 
 
 def get_target(game_state, client_unit):

@@ -144,6 +144,7 @@
         const gameScreen = document.getElementById('game-screen');
         const nickNameInput = document.getElementById('nickname-input');
         const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
         var ws = null;
         var actionCommand = null;
         var GAME_INFO = {};
@@ -276,15 +277,19 @@
                     var units = gameInfo['units'];
                     var cx = gameInfo['cx'];
                     var cy = gameInfo['cy'];
-                render(units, cx, cy);
+                    render(units, cx, cy);
 
-                var debugList = document.getElementById('debug-list');
-                var item = document.createElement('li');
+                    var debugList = document.getElementById('debug-list');
+                    var item = document.createElement('li');
                     content = document.createTextNode("tick no: " + gameInfo["tick_no"] + ", ts (server): " + gameInfo["ts"] + ", ts (client): " + Date.now() + ", lag: " + (new Date().getTime() - gameInfo["ts"] * 1000 + new Date().getTimezoneOffset() * 60 * 1000));
-                item.appendChild(content);
-                debugList.prepend(item);
-                if (debugList.children.length > 3) {  // Keep 3 most recent items
-                    debugList.removeChild(debugList.lastChild);
+                    item.appendChild(content);
+                    debugList.prepend(item);
+                    if (debugList.children.length > 3) {  // Keep 3 most recent items
+                        debugList.removeChild(debugList.lastChild);
+                    }                    
+                }
+                else if (msg["type"] === "chat") {
+                    chatMessages.value = msg["chat"] + "\n" + chatMessages.value;
                 }
             };
 
