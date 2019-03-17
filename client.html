@@ -226,13 +226,14 @@
 
             // Draw units
             var isAlive = false;
+            var ghostColor = 'rgba(255, 0, 0, 0.25)';
             for (var u of units) {
                 // translate unit coordinates to screen coordinate (shift (0, 0) to screen center)             
                 x = u["x"] * scale + canvas.width / 2;
                 y = u["y"] * scale + canvas.height / 2;
 
                 if (u['type'] === 'ghost') {
-                    ctx.fillStyle = 'rgba(255, 0, 0, 0.25)';
+                    ctx.fillStyle = ghostColor;
                     if (u['is_marked']) {
                         ctx.lineWidth = 2;
                         ctx.strokeStyle = 'green';
@@ -272,6 +273,7 @@
                     "Refresh to start again ",
                     "or watch your ghost haunting."
                 ]
+                ctx.fillStyle = ghostColor;
                 for (var [ix, line] of gameOverMessage.entries()) {
                     ctx.fillText(line, 120, 100 + ix * 60);
                 }
