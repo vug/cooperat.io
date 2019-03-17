@@ -47,14 +47,25 @@ async def handshake(cls, nickname):
 
 
 async def producer_handler(ws, cls):
-    action = {"warrior": "attack", "psychic": "mark"}
-    commands = ["up", "down", "left", "right", action]
-    try:
+    action = {"warrior": "attack", "psychic": "mark"}[cls]
+    commands = ["up", "down", "left", "right"]
+
+    async def movements():
         while True:
             cmd = random.choice(commands)
             msg = {"type": "command", "command": cmd}
             await ws.send(json.dumps(msg))
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(0.8 + random.random() * 0.4)
+
+    async def attacks():
+        while True:
+            if random.random() < 0.5:
+                msg = {"type": "command", "command": action}
+                await ws.send(json.dumps(msg))
+            await asyncio.sleep(0.2 + random.random() * 0.3)
+
+    try:
+        await asyncio.gather(movements(), attacks())
     except websockets.ConnectionClosed:
         print("server disconnected.")
 
