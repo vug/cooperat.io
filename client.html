@@ -309,20 +309,25 @@
             };
 
             window.onkeydown = handleCommandKeyDown;
-
             chatInput.onfocus = function() {
                 window.onkeydown = null;
             };
-            chatInput.onblur = function() {
-                window.onkeydown = handleCommandKeyDown;
+            chatInput.onblur = function(event) {
+                event.preventDefault();
+                window.onkeydown = handleCommandKeyDown;                
             }
-            chatInput.onkeyup = function(event) {
-                if (event.keyCode != 13) { return; }
-                var msg = JSON.stringify(
-                    {"type": "chat", "chat": chatInput.value}
-                );
-                ws.send(msg);
-                chatInput.value = "";
+            chatInput.onkeydown = chatInput.onkeypress = function(event) {                
+                if (event.keyCode === 13) {
+                    var msg = JSON.stringify(
+                        {"type": "chat", "chat": chatInput.value}
+                    );
+                    ws.send(msg);
+                    chatInput.value = "";
+                    chatInput.blur();       
+                }               
+            }
+            chatMessages.onfocus = function() {
+                chatMessages.blur();
             }
         }
 
@@ -335,6 +340,10 @@
                     case 68: command = 'right'; break;
                     case 83: command = 'down'; break;
                     case 32: command = actionCommand; break;
+                    case 9:
+                        event.preventDefault(); 
+                        chatInput.focus();
+                        break;
                     default: return;
                 }
                 var msg = JSON.stringify(
