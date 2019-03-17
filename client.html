@@ -18,8 +18,8 @@
         }
         #buttons {
             position: fixed;
-            bottom: 100px;
-            left: 100px;
+            bottom: 20px;
+            left: 20px;
         }
         button.command {
             width: 50px;
@@ -29,6 +29,28 @@
             position: fixed;
             top: 10px;
             left: 10px;
+            font-size: 10px;
+        }
+        #chat-box {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50%;
+        }
+        #chat-box input[type="text"], 
+        #chat-box textarea {
+            width: 100%;
+            font-size: 14x;
+            font-family: monospace;
+            background: transparent;
+            resize: none;
+            padding: 0px 0px;
+            padding-left: 1px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.3);
+            border-width: 1px;            
+            box-sizing: border-box;            
         }
         #welcome-screen {
             position: fixed;
@@ -50,7 +72,8 @@
             transform: translate(-50%,-50%);
             -ms-transform: translate(-50%,-50%);
         }
-        #welcome-choices>button,input {
+        #welcome-choices button,
+        #welcome-choices input[type="text"] {
             font-size: 40px;
         }
         #welcome-spinner {
@@ -84,29 +107,33 @@
     <div id="game-screen">
         <canvas id="canvas">Game Arena</canvas>
         <table id="buttons">
-                <tr>
-                    <td></td>
-                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up (W)</button></td> 
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left (A)</button></td>
-                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "stop"}))'>stop</button></td> 
-                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right (D)</button></td>
-                    <td>
-                        <button class="command" id="mark-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "mark"}))'>mark (SPACE)</button>
-                        <button class="command" id="attack-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "attack"}))'>attack (SPACE)</button>                
-                    </td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down (S)</button></td> 
-                    <td></td>
-                    <td></td>
-                </tr>            
-            </table>        
-            <ul id="debug-list"></ul>         
+            <tr>
+                <td></td>
+                <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "up"}))'>up (W)</button></td> 
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "left"}))'>left (A)</button></td>
+                <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "stop"}))'>stop</button></td> 
+                <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "right"}))'>right (D)</button></td>
+                <td>
+                    <button class="command" id="mark-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "mark"}))'>mark (SPACE)</button>
+                    <button class="command" id="attack-button" style="display: none;" onclick='ws.send(JSON.stringify({"type": "command", "command": "attack"}))'>attack (SPACE)</button>                
+                </td>
+            </tr>
+            <tr>
+                <td></td>
+                <td><button class="command" onclick='ws.send(JSON.stringify({"type": "command", "command": "down"}))'>down (S)</button></td> 
+                <td></td>
+                <td></td>
+            </tr>            
+        </table>        
+        <ul id="debug-list"></ul>       
+        <div id="chat-box">
+            <input id="chat-input" type="text" placeholder="Enter chat message to broadcast.">
+            <textarea id="chat-messages" readonly cols="80" rows="10" wrap="soft"></textarea>
+        </div>  
     </div>       
     <script>
         const canvas = document.getElementById('canvas');
@@ -116,6 +143,8 @@
         const welcomeSpinner = document.getElementById('welcome-spinner');
         const gameScreen = document.getElementById('game-screen');
         const nickNameInput = document.getElementById('nickname-input');
+        const chatInput = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
         var ws = null;
         var actionCommand = null;
         var GAME_INFO = {};
@@ -243,22 +272,46 @@
 
             ws.onmessage = function(event) {
                 var msg = JSON.parse(event.data);
-                var units = msg['units'];
-                var cx = msg['cx'];
-                var cy = msg['cy'];
-                render(units, cx, cy);
+                if (msg["type"] === "game") {
+                    var gameInfo = msg["game"];
+                    var units = gameInfo['units'];
+                    var cx = gameInfo['cx'];
+                    var cy = gameInfo['cy'];
+                    render(units, cx, cy);
 
-                var debugList = document.getElementById('debug-list');
-                var item = document.createElement('li');
-                content = document.createTextNode("tick no: " + msg["tick_no"] + ", ts (server): " + msg["ts"] + ", ts (client): " + Date.now() + ", lag: " + (new Date().getTime() - msg["ts"] * 1000 + new Date().getTimezoneOffset() * 60 * 1000));
-                item.appendChild(content);
-                debugList.prepend(item);
-                if (debugList.children.length > 5) {  // Keep 5 most recent items
-                    debugList.removeChild(debugList.lastChild);
+                    var debugList = document.getElementById('debug-list');
+                    var item = document.createElement('li');
+                    content = document.createTextNode("tick no: " + gameInfo["tick_no"] + ", ts (server): " + gameInfo["ts"] + ", ts (client): " + Date.now() + ", lag: " + (new Date().getTime() - gameInfo["ts"] * 1000 + new Date().getTimezoneOffset() * 60 * 1000));
+                    item.appendChild(content);
+                    debugList.prepend(item);
+                    if (debugList.children.length > 3) {  // Keep 3 most recent items
+                        debugList.removeChild(debugList.lastChild);
+                    }                    
+                }
+                else if (msg["type"] === "chat") {
+                    chatMessages.value = msg["chat"] + "\n" + chatMessages.value;
                 }
             };
 
-            window.onkeydown = function(event) {
+            window.onkeydown = handleCommandKeyDown;
+
+            chatInput.onfocus = function() {
+                window.onkeydown = null;
+            };
+            chatInput.onblur = function() {
+                window.onkeydown = handleCommandKeyDown;
+            }
+            chatInput.onkeyup = function(event) {
+                if (event.keyCode != 13) { return; }
+                var msg = JSON.stringify(
+                    {"type": "chat", "chat": chatInput.value}
+                );
+                ws.send(msg);
+                chatInput.value = "";
+            }
+        }
+
+        function handleCommandKeyDown(event) {
                 if (event.repeat) { return; }
                 var command = null;
                 switch (event.keyCode) {
@@ -274,7 +327,6 @@
                 );
                 ws.send(msg);
             };
-        }
 
     </script>
 </body>

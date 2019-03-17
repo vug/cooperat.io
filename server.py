@@ -110,8 +110,8 @@ async def producer_handler(ws, path, game_state):
                 if u["type"] == "player" and is_client:
                     d["type"] = "me"
                 message["units"].append(d)
-
-            await ws.send(json.dumps(message))
+            d = {"type": "game", "game": message}
+            await ws.send(json.dumps(d))
             await asyncio.sleep(0.025)
     except websockets.ConnectionClosed:
         logging.info(f"User {ws.remote_address} has left.")
@@ -160,6 +160,11 @@ async def consumer_handler(ws, path, game_state):
                 ghost_id, distance = get_target(game_state, client_unit)
                 if ghost_id is not None:
                     game_state.units.pop(ghost_id)
+        if msg_type == "chat":
+            received_chat_line = msg["chat"]
+            broadcast_message = f'{client_unit["nickname"]}: {received_chat_line}'
+            d = {"type": "chat", "chat": broadcast_message}
+            await asyncio.wait([s.send(json.dumps(d)) for s in connectedSockets])
 
 
 def get_target(game_state, client_unit):
