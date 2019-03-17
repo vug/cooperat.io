@@ -87,18 +87,24 @@ async def producer_handler(ws, path, game_state):
             client_uid = connectedSockets[ws]
             client_unit = game_state.units[client_uid]
             message["cx"] = client_unit["x"]
-            message["cy"] = client_unit["y"]            
+            message["cy"] = client_unit["y"]
             is_client_warrior = client_unit["class"] == "warrior"
+            is_client_dead = client_unit["type"] == "ghost"
             for uid, u in game_state.units.items():
-                is_client = uid == client_uid
-                is_ghost = u["type"] == "ghost"
-                is_in_sight = (
+                is_unit_client = uid == client_uid
+                is_unit_ghost = u["type"] == "ghost"
+                is_unit_in_sight = (
                     abs(u["x"] - client_unit["x"]) < game_state.sight_range + 1.0
                     and abs(u["y"] - client_unit["y"]) < game_state.sight_range + 1.0
                 )
-                if not is_client and not is_in_sight:
+                if not is_unit_client and not is_unit_in_sight:
                     continue
-                if is_client_warrior and is_ghost and not u["is_marked"]:
+                if (
+                    is_client_warrior
+                    and not is_client_dead
+                    and is_unit_ghost
+                    and not u["is_marked"]
+                ):
                     continue
                 d = {
                     k: u[k]
@@ -107,7 +113,7 @@ async def producer_handler(ws, path, game_state):
                 }
                 d["x"] -= client_unit["x"]
                 d["y"] -= client_unit["y"]
-                if u["type"] == "player" and is_client:
+                if u["type"] == "player" and is_unit_client:
                     d["type"] = "me"
                 message["units"].append(d)
             d = {"type": "game", "game": message}
