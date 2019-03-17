@@ -5,6 +5,7 @@ import json
 import logging
 import math
 import random
+from logging.handlers import TimedRotatingFileHandler
 
 import websockets
 
@@ -36,7 +37,7 @@ def game_loop(game_state):
     touched_players_ids = detect_collisions(game_state)
     touched_players = [game_state.units[ix] for ix in touched_players_ids]
     if touched_players_ids:
-        logging.info(
+        logger.info(
             (
                 f"tick: {game_state.tick_no}."
                 f"touched by ghost: {[p['nickname'] for p in touched_players]}"
@@ -121,14 +122,14 @@ async def producer_handler(ws, path, game_state):
             await ws.send(json.dumps(d))
             await asyncio.sleep(0.025)
     except websockets.ConnectionClosed:
-        logging.info(f"User {ws.remote_address} has left.")
+        logger.info(f"User {ws.remote_address} has left.")
     finally:
         uid = connectedSockets[ws]
         client_unit = game_state.units[uid]
         if client_unit["type"] == "ghost":
-            logging.info(f"Keeping {ws.remote_address}'s unit. id: {uid}")
+            logger.info(f"Keeping {ws.remote_address}'s unit. id: {uid}")
         else:
-            logging.info(f"Removing {ws.remote_address}'s unit. id: {uid}")
+            logger.info(f"Removing {ws.remote_address}'s unit. id: {uid}")
             game_state.units.pop(uid, None)
         connectedSockets.pop(ws, None)
 
@@ -138,9 +139,9 @@ async def consumer_handler(ws, path, game_state):
         try:
             msg = json.loads(msg_str)
         except json.JSONDecodeError:
-            logging.info(f"{ws.remote_address}: failed at decoding {msg_str}")
+            logger.info(f"{ws.remote_address}: failed at decoding {msg_str}")
         client_unit = game_state.units[connectedSockets[ws]]
-        logging.info(f"{ws.remote_address}, {client_unit['nickname']} {msg_str}")
+        logger.info(f"{ws.remote_address}, {client_unit['nickname']} {msg_str}")
         if client_unit["type"] == "ghost":
             continue
         msg_type = msg["type"]
@@ -218,10 +219,10 @@ async def handshake(ws, game_state):
 
     Return whether handshake was successful or not.
     """
-    logging.info(f"client connected: {ws.remote_address}")
+    logger.info(f"client connected: {ws.remote_address}")
     msg_str = await ws.recv()
     msg = json.loads(msg_str)
-    logging.info(f"{ws.remote_address}'s first message: {msg}")
+    logger.info(f"{ws.remote_address}'s first message: {msg}")
     msg_type = msg["type"]
     if msg_type != "init":
         return False
@@ -250,7 +251,7 @@ async def handshake(ws, game_state):
     connectedSockets[ws] = uid
     game_state.units[uid] = u
     game_state.num_units_created += 1
-    logging.info(f"Client is given id {uid} and added to game.")
+    logger.info(f"Client is given id {uid} and added to game.")
     return True
 
 
@@ -258,7 +259,9 @@ def main():
     game_state = init_game_state()
     # Make ws_handler accept one more argument
     bound_handler = functools.partial(connection_handler, game_state=game_state)
-    ws_server = websockets.serve(ws_handler=bound_handler, host="localhost", port=8765)
+    port = 8765
+    logger.info(f"Starting server. Opening port: {port}")
+    ws_server = websockets.serve(ws_handler=bound_handler, host="localhost", port=port)
     asyncio.get_event_loop().run_until_complete(ws_server)
     asyncio.get_event_loop().run_forever()
 
@@ -282,7 +285,24 @@ def init_game_state():
     return gs
 
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+def setup_logger():
+    rotation_handler = TimedRotatingFileHandler(
+        filename="main.log", when="D", interval=1
+    )
+    formatter = logging.Formatter(
+        fmt="[%(asctime)s][%(levelname)s][%(module)s][%(funcName)s][%(lineno)d]:"
+        "%(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    rotation_handler.setFormatter(formatter)
+    logger = logging.getLogger("main_logger")
+    logger.setLevel(logging.INFO)
+    logger.addHandler(rotation_handler)
+
     logging.getLogger("asyncio").setLevel(logging.WARNING)
+    return logger
+
+
+if __name__ == "__main__":
+    logger = setup_logger()
     main()
