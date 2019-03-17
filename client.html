@@ -27,9 +27,9 @@
         }
         #debug-list {
             position: fixed;
-            top: 10px;
-            left: 10px;
-            font-size: 10px;
+            bottom: 5px;
+            left: 5px;
+            font-size: 8px;
         }
         #chat-box {
             position: fixed;
@@ -312,7 +312,7 @@
                     content = document.createTextNode("tick no: " + gameInfo["tick_no"] + ", ts (server): " + gameInfo["ts"] + ", ts (client): " + Date.now() + ", lag: " + (new Date().getTime() - gameInfo["ts"] * 1000 + new Date().getTimezoneOffset() * 60 * 1000));
                     item.appendChild(content);
                     debugList.prepend(item);
-                    if (debugList.children.length > 3) {  // Keep 3 most recent items
+                    if (debugList.children.length > 1) {  // Keep 1 most recent items
                         debugList.removeChild(debugList.lastChild);
                     }                    
                 }
