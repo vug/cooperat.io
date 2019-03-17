@@ -134,9 +134,12 @@ async def producer_handler(ws, path, game_state):
 
 async def consumer_handler(ws, path, game_state):
     async for msg_str in ws:
-        logging.info(f"{ws.remote_address}: {msg_str}")
-        msg = json.loads(msg_str)
+        try:
+            msg = json.loads(msg_str)
+        except json.JSONDecodeError:
+            logging.info(f"{ws.remote_address}: failed at decoding {msg_str}")
         client_unit = game_state.units[connectedSockets[ws]]
+        logging.info(f"{ws.remote_address}, {client_unit['nickname']} {msg_str}")
         if client_unit["type"] == "ghost":
             continue
         msg_type = msg["type"]
