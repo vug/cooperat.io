@@ -44,6 +44,7 @@ def game_loop(game_state):
         )
     for u in touched_players:
         u["type"] = "ghost"
+        u["speed"] = 1.5
         u["is_marked"] = False
 
     game_state.ts = datetime.datetime.utcnow().timestamp()
