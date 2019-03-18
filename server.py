@@ -178,6 +178,11 @@ async def consumer_handler(ws, path, game_state):
                 ghost = game_state.units.get(ghost_id, None)
                 if ghost and ghost["is_marked"]:
                     game_state.units.pop(ghost_id)
+                    num_ghosts = sum(
+                        [u["type"] == "ghost" for u in game_state.units.values()]
+                    )
+                    if num_ghosts < 10:
+                        create_ghost(game_state)
         if msg_type == "chat":
             received_chat_line = msg["chat"]
             broadcast_message = f'{client_unit["nickname"]}: {received_chat_line}'
@@ -273,22 +278,27 @@ def main():
 
 
 def init_game_state():
-    gs = GameState()
+    game_state = GameState()
     n_ghosts = 10
     for _ in range(n_ghosts):
-        uid = gs.num_units_created
-        unit = {
-            "id": uid,
-            "type": "ghost",
-            "x": random.random() * gs.world_size,
-            "y": random.random() * gs.world_size,
-            "speed": 1.5,
-            "dir": random.random() * math.pi,
-            "is_marked": False,
-        }
-        gs.units[uid] = unit
-        gs.num_units_created += 1
-    return gs
+        create_ghost(game_state)
+    return game_state
+
+
+def create_ghost(game_state):
+    uid = game_state.num_units_created
+    unit = {
+        "id": uid,
+        "type": "ghost",
+        "x": random.random() * game_state.world_size,
+        "y": random.random() * game_state.world_size,
+        "speed": 1.5,
+        "dir": random.random() * math.pi,
+        "is_marked": False,
+    }
+    logger.info(f"Ghost created: {unit}")
+    game_state.units[uid] = unit
+    game_state.num_units_created += 1
 
 
 def setup_logger():
