@@ -192,7 +192,7 @@
                 socketURL = '127.0.0.1:8765';
             }
             else {  // http:
-                socketURL = 'veliugurguney.com:83';
+                socketURL = 'veliugurguney.com:83/socket';
             }
             ws = new WebSocket('ws://' + socketURL);
             ws.onopen = function(event) {
