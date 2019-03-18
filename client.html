@@ -187,7 +187,14 @@
             welcomeChoices.style.display = "none";
             welcomeSpinner.style.display = "block";
 
-            ws = new WebSocket('ws://127.0.0.1:8765');
+            var socketURL = null;
+            if (window.location.protocol === 'file:') {
+                socketURL = '127.0.0.1:8765';
+            }
+            else {  // http:
+                socketURL = 'veliugurguney.com:83';
+            }
+            ws = new WebSocket('ws://' + socketURL);
             ws.onopen = function(event) {
                 var msg = {"type": "init", "nickname": nickname, "class": cls};
                 ws.send(JSON.stringify(msg));
